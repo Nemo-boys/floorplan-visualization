@@ -5,7 +5,7 @@ applies FMLM room permutation augmentation (LOCKED rooms first), and exports
 JSONL datasets ready for QLoRA SFT and RLVR GRPO training.
 """
 
-from typing import List, Dict, Tuple, Optional, Any
+from typing import List, Dict, Tuple, Optional, Any, Set
 import random
 import json
 import os
@@ -21,11 +21,11 @@ from aegisplan.router import SYSTEM_PROMPT
 
 def generate_synthetic_clinic_brief(rng: random.Random) -> Dict[str, Any]:
     """Sample a random, architecturally valid outpatient clinic specification."""
-    # Footprint: 14m to 24m width, 10m to 16m height (on 1000mm increments)
-    w_mm = rng.choice([14000, 16000, 18000, 20000, 22000])
-    h_mm = rng.choice([10000, 12000, 14000])
+    # Footprint: 14m to 24m width, 10m to 15m height (on 500mm / 1000mm increments)
+    w_mm = rng.choice([14000, 15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000])
+    h_mm = rng.choice([10000, 11000, 12000, 13000, 14000, 15000])
 
-    num_exams = rng.randint(2, 5)
+    num_exams = rng.randint(2, 6)
     has_consult = rng.random() > 0.4
     has_procedure = rng.random() > 0.5
     has_reception = rng.random() > 0.3
@@ -38,6 +38,8 @@ def generate_synthetic_clinic_brief(rng: random.Random) -> Dict[str, Any]:
         "Ambulatory pediatric care clinic",
         "Urgent care satellite facility",
         "General outpatient medical suite",
+        "Regional ambulatory care clinic",
+        "Integrative health clinical center",
     ]
     clinic_name = rng.choice(clinic_types)
 
@@ -270,20 +272,21 @@ def construct_and_solve_template(spec: Dict[str, Any], rng: random.Random) -> Op
 
 
 def generate_curriculum_dataset(
-    num_samples: int = 1000,
+    num_samples: int = 500,
     output_dir: str = "dataset",
     seed: int = 42,
 ) -> Dict[str, str]:
-    """Generate synthetic outpatient clinic plans and export SFT & GRPO JSONL files."""
+    """Generate synthetic outpatient clinic plans with deduplication and train/val/test splits."""
     rng = random.Random(seed)
     os.makedirs(output_dir, exist_ok=True)
 
     sft_records: List[Dict[str, Any]] = []
     grpo_records: List[Dict[str, Any]] = []
+    seen_fml_hashes: Set[str] = set()
 
     success_count = 0
     attempts = 0
-    max_attempts = num_samples * 2
+    max_attempts = num_samples * 10
 
     while success_count < num_samples and attempts < max_attempts:
         attempts += 1
@@ -298,9 +301,6 @@ def generate_curriculum_dataset(
         if passed_ratio < 1.0:
             continue
 
-        # Serialize FML
-        fml_string = serialize_to_fml(plan)
-
         # FMLM Permutation Augmentation:
         # Shuffle FREE rooms while keeping LOCKED rooms first
         locked_rooms = [r for r in plan.rooms if r.locked]
@@ -309,6 +309,11 @@ def generate_curriculum_dataset(
         augmented_plan = plan.model_copy(deep=True)
         augmented_plan.rooms = locked_rooms + free_rooms
         fml_augmented = serialize_to_fml(augmented_plan)
+
+        # Deduplication check: ensure layout is globally unique
+        if fml_augmented in seen_fml_hashes:
+            continue
+        seen_fml_hashes.add(fml_augmented)
 
         # 1. SFT Chat Format (for QLoRA)
         prompt_content = (
@@ -332,7 +337,7 @@ def generate_curriculum_dataset(
         }
         sft_records.append(sft_entry)
 
-        # 2. GRPO Prompt Format (for RLVR training with verifiable rewards)
+        # 2. GRPO Prompt Format
         grpo_entry = {
             "prompt": [
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -347,7 +352,34 @@ def generate_curriculum_dataset(
 
         success_count += 1
 
-    # Write files
+    # Shuffle with fixed seed for reproducible train/val/test partition
+    rng.shuffle(sft_records)
+    n_tot = len(sft_records)
+    n_train = int(n_tot * 0.80)
+    n_val = int(n_tot * 0.10)
+    n_test = n_tot - n_train - n_val
+
+    train_records = sft_records[:n_train]
+    val_records = sft_records[n_train : n_train + n_val]
+    test_records = sft_records[n_train + n_val :]
+
+    # Write separate train, val, and test splits
+    train_path = os.path.join(output_dir, "train.jsonl")
+    with open(train_path, "w", encoding="utf-8") as f:
+        for r in train_records:
+            f.write(json.dumps(r) + "\n")
+
+    val_path = os.path.join(output_dir, "val.jsonl")
+    with open(val_path, "w", encoding="utf-8") as f:
+        for r in val_records:
+            f.write(json.dumps(r) + "\n")
+
+    test_path = os.path.join(output_dir, "test.jsonl")
+    with open(test_path, "w", encoding="utf-8") as f:
+        for r in test_records:
+            f.write(json.dumps(r) + "\n")
+
+    # Also keep the unified sft_clinical_curriculum.jsonl for compatibility
     sft_path = os.path.join(output_dir, "sft_clinical_curriculum.jsonl")
     with open(sft_path, "w", encoding="utf-8") as f:
         for r in sft_records:
@@ -359,8 +391,14 @@ def generate_curriculum_dataset(
             f.write(json.dumps(r) + "\n")
 
     return {
+        "train_path": train_path,
+        "val_path": val_path,
+        "test_path": test_path,
         "sft_path": sft_path,
         "grpo_path": grpo_path,
+        "train_count": str(len(train_records)),
+        "val_count": str(len(val_records)),
+        "test_count": str(len(test_records)),
         "samples_generated": str(success_count),
     }
 

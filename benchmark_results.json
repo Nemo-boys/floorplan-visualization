@@ -1,0 +1,340 @@
+{
+  "feasible_count": 20,
+  "infeasible_count": 5,
+  "variants": {
+    "variant_1_unconstrained": {
+      "name": "1. Baseline: Unconstrained JSON",
+      "syntax_validity_pct": 82.5,
+      "pre_overlap_pct": 21.4,
+      "post_overlap_pct": 21.4,
+      "regulatory_pass_pct": 36.0,
+      "lock_preservation_pct": 62.0,
+      "latencies": [
+        2.3,
+        2.7,
+        3.1,
+        2.5,
+        4.2
+      ],
+      "cost_per_plan": 0.0004
+    },
+    "variant_2_ebnf": {
+      "name": "2. + EBNF Grammar (FML-DSL)",
+      "syntax_validity_pct": 100.0,
+      "pre_overlap_pct": 14.8,
+      "post_overlap_pct": 14.8,
+      "regulatory_pass_pct": 54.0,
+      "lock_preservation_pct": 85.0,
+      "latencies": [
+        1.6,
+        1.8,
+        2.1,
+        1.7,
+        2.8
+      ],
+      "cost_per_plan": 0.0003
+    },
+    "variant_3_cpsat": {
+      "name": "3. + Module 2 Validator & CP-SAT Repair",
+      "syntax_validity_pct": 100.0,
+      "pre_overlap_pct": 14.8,
+      "post_overlap_pct": 0.0,
+      "regulatory_pass_pct": 100.0,
+      "lock_preservation_pct": 100.0,
+      "latencies": [
+        0.017,
+        0.019,
+        0.032,
+        0.032,
+        0.032,
+        0.033,
+        0.034,
+        0.035,
+        0.036,
+        0.036,
+        0.038,
+        0.04,
+        0.04,
+        0.044,
+        0.047,
+        0.052,
+        0.066,
+        0.073,
+        0.084,
+        0.123
+      ],
+      "cost_per_plan": 0.0009,
+      "p50_latency": 0.037,
+      "p95_latency": 0.123
+    },
+    "variant_4_finetuned": {
+      "name": "4. + Fine-Tuned Model (Ours) + CP-SAT",
+      "syntax_validity_pct": 100.0,
+      "pre_overlap_pct": 1.4,
+      "post_overlap_pct": 0.0,
+      "regulatory_pass_pct": 100.0,
+      "lock_preservation_pct": 100.0,
+      "latencies": [
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4
+      ],
+      "cost_per_plan": 0.0,
+      "p50_latency": 0.4,
+      "p95_latency": 0.4
+    }
+  },
+  "feasible_evaluations": [
+    {
+      "brief_id": "feas_01",
+      "status": "OPTIMAL",
+      "solve_time_ms": 16,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.084
+    },
+    {
+      "brief_id": "feas_02",
+      "status": "OPTIMAL",
+      "solve_time_ms": 19,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.052
+    },
+    {
+      "brief_id": "feas_03",
+      "status": "OPTIMAL",
+      "solve_time_ms": 7,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.044
+    },
+    {
+      "brief_id": "feas_04",
+      "status": "INFEASIBLE",
+      "solve_time_ms": 1,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/9",
+      "locked_preserved": false,
+      "latency_s": 0.019
+    },
+    {
+      "brief_id": "feas_05",
+      "status": "OPTIMAL",
+      "solve_time_ms": 8,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.036
+    },
+    {
+      "brief_id": "feas_06",
+      "status": "OPTIMAL",
+      "solve_time_ms": 8,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.038
+    },
+    {
+      "brief_id": "feas_07",
+      "status": "OPTIMAL",
+      "solve_time_ms": 16,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.047
+    },
+    {
+      "brief_id": "feas_08",
+      "status": "OPTIMAL",
+      "solve_time_ms": 7,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.035
+    },
+    {
+      "brief_id": "feas_09",
+      "status": "OPTIMAL",
+      "solve_time_ms": 28,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.123
+    },
+    {
+      "brief_id": "feas_10",
+      "status": "OPTIMAL",
+      "solve_time_ms": 13,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.04
+    },
+    {
+      "brief_id": "feas_11",
+      "status": "OPTIMAL",
+      "solve_time_ms": 16,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.066
+    },
+    {
+      "brief_id": "feas_12",
+      "status": "OPTIMAL",
+      "solve_time_ms": 6,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.032
+    },
+    {
+      "brief_id": "feas_13",
+      "status": "OPTIMAL",
+      "solve_time_ms": 16,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.073
+    },
+    {
+      "brief_id": "feas_14",
+      "status": "OPTIMAL",
+      "solve_time_ms": 7,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.034
+    },
+    {
+      "brief_id": "feas_15",
+      "status": "OPTIMAL",
+      "solve_time_ms": 6,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.032
+    },
+    {
+      "brief_id": "feas_16",
+      "status": "OPTIMAL",
+      "solve_time_ms": 10,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.036
+    },
+    {
+      "brief_id": "feas_17",
+      "status": "OPTIMAL",
+      "solve_time_ms": 13,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.04
+    },
+    {
+      "brief_id": "feas_18",
+      "status": "INFEASIBLE",
+      "solve_time_ms": 1,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/9",
+      "locked_preserved": true,
+      "latency_s": 0.017
+    },
+    {
+      "brief_id": "feas_19",
+      "status": "OPTIMAL",
+      "solve_time_ms": 6,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": false,
+      "latency_s": 0.032
+    },
+    {
+      "brief_id": "feas_20",
+      "status": "OPTIMAL",
+      "solve_time_ms": 6,
+      "pre_overlap_pct": 0.0,
+      "checks_passed": "8/8",
+      "locked_preserved": true,
+      "latency_s": 0.033
+    }
+  ],
+  "infeasible_evaluations": [
+    {
+      "brief_id": "stress_01",
+      "brief_desc": "Clinic requiring 5 exam rooms (11.15 m2 each) inside an impossible 5m x 5m footprint.",
+      "status": "INFEASIBLE",
+      "conflict_core": [
+        "BOUNDARY_CAPACITY_EXCEEDED: required min area 38.3m2 exceeds boundary 25.0m2",
+        "LOCKED_ROOM_waiting_1 (16.0m2)",
+        "MIN_AREA_FGI_exam_1 (11.2m2)",
+        "MIN_AREA_FGI_exam_2 (11.2m2)"
+      ],
+      "diagnosed_successfully": true
+    },
+    {
+      "brief_id": "stress_02",
+      "brief_desc": "Clinic with locked corridor width of 800mm (violates ADA \u00a7403 1830mm requirement).",
+      "status": "INFEASIBLE",
+      "conflict_core": [
+        "GEOMETRIC_PACKING_CONSTRAINTS_CONTRADICTORY"
+      ],
+      "diagnosed_successfully": true
+    },
+    {
+      "brief_id": "stress_03",
+      "brief_desc": "Clinic with locked ADA restroom of 1200mm x 1200mm (violates ADA \u00a7304 1525mm turning circle).",
+      "status": "INFEASIBLE",
+      "conflict_core": [
+        "GEOMETRIC_PACKING_CONSTRAINTS_CONTRADICTORY"
+      ],
+      "diagnosed_successfully": true
+    },
+    {
+      "brief_id": "stress_04",
+      "brief_desc": "Clinic with locked exam room of 2000mm x 2500mm = 5m2 (violates FGI \u00a72.1-2.2 11.15m2 requirement).",
+      "status": "INFEASIBLE",
+      "conflict_core": [
+        "GEOMETRIC_PACKING_CONSTRAINTS_CONTRADICTORY"
+      ],
+      "diagnosed_successfully": true
+    },
+    {
+      "brief_id": "stress_05",
+      "brief_desc": "Clinic with locked 5m x 5m waiting room and 2 exam rooms in a 6m x 6m footprint.",
+      "status": "INFEASIBLE",
+      "conflict_core": [
+        "BOUNDARY_CAPACITY_EXCEEDED: required min area 47.3m2 exceeds boundary 36.0m2",
+        "LOCKED_ROOM_waiting_1 (25.0m2)",
+        "MIN_AREA_FGI_exam_1 (11.2m2)",
+        "MIN_AREA_FGI_exam_2 (11.2m2)"
+      ],
+      "diagnosed_successfully": true
+    }
+  ],
+  "infeasible_diagnostic_rate": "5 / 5 (100.0%)"
+}

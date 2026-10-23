@@ -3,6 +3,7 @@
  *
  *   tsx tests/visual/compare.ts [referenceDir] [outputDir] [diffDir]
  *     defaults: tests/visual/reference, tests/visual/output, tests/visual/diff
+ *   CAPTURE_ONLY=import-empty,export  compares only those states, as capture.ts captures only them.
  *
  * Outside the 3D canvas at most 0.1% of pixels may differ (threshold 0.1). Inside it, up to 3% (threshold 0.2),
  * and any canvas diff over 1% is listed so someone can check it by eye. The canvas rectangle comes from the
@@ -40,7 +41,10 @@ function countDiffs(a: PNG, b: PNG, threshold: number, canvas: Rect | null): { i
   return { inside, outside };
 }
 
-const shots = JSON.parse(fs.readFileSync(path.join(refDir, 'shots.json'), 'utf8')) as Shot[];
+const only = process.env.CAPTURE_ONLY ? process.env.CAPTURE_ONLY.split(',') : null;
+const shots = (JSON.parse(fs.readFileSync(path.join(refDir, 'shots.json'), 'utf8')) as Shot[]).filter(
+  s => !only || only.includes(s.name)
+);
 fs.mkdirSync(diffDir, { recursive: true });
 const failures: string[] = [];
 const review: string[] = [];
@@ -69,6 +73,7 @@ for (const shot of shots) {
     pixelmatch(a.data, b.data, diff.data, a.width, a.height, { threshold: OUTSIDE.threshold });
     fs.writeFileSync(path.join(diffDir, shot.file), PNG.sync.write(diff));
   }
+  console.log((ok ? '  ok    ' : '  DIFF  ') + line);
   if (!ok) failures.push(line);
   else {
     passed++;

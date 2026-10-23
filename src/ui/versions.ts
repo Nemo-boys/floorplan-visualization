@@ -6,23 +6,15 @@ import { tour } from '../view3d/tour';
 import { $ } from './dom';
 import { renderImportSummary, updatePlanHeader } from './import';
 import { renderPlan2D } from './plan-panel';
-import {
-  buildScene,
-  fillRoomDefaults,
-  fitCamera,
-  renderBuilder,
-  renderChecks,
-  renderDockThumb,
-  renderEditTools,
-  renderExport,
-  renderReviewInfo,
-  renderVersions,
-  resetSim,
-  selectItem,
-  setView,
-  stopPlacing,
-  updateRouteText
-} from './pending';
+import { fitCamera, setView } from '../view3d/cameras';
+import { PLACE_NAMES, selectItem, stopPlacing } from '../view3d/placement';
+import { buildScene } from '../view3d/scene';
+import { renderDockThumb } from './dock';
+import { renderEditTools, renderVersions } from './edit';
+import { renderBuilder, renderChecks, renderExport } from './pending';
+import { renderReviewInfo, updateRouteText } from './review';
+import { fillRoomDefaults } from './simulate';
+import { resetSim } from './transport';
 
 export function clonePlaced(it: FurnItem): FurnItem {
   return {
@@ -97,6 +89,26 @@ export function commitVersion(change: string, mutate: (nv: Version) => void): Ve
   state.vIndex = state.versions.length - 1;
   applyVersion(nv, true);
   return nv;
+}
+export function afterFurnitureChange(it: FurnItem, how: string): void {
+  const cur = state.versions[state.vIndex];
+  if (how === 'added' || how === 'removed') {
+    const nv: Version = Object.assign({}, cur, {
+      n: state.versions.length + 1,
+      change: (how === 'added' ? 'Added a ' : 'Removed a ') + (PLACE_NAMES[it.kind] || it.kind).toLowerCase(),
+      placed: state.placed.map(clonePlaced),
+      renames: Object.assign({}, cur.renames),
+      at: new Date()
+    });
+    state.versions = state.versions.slice(0, state.vIndex + 1).concat([nv]);
+    state.vIndex = state.versions.length - 1;
+  } else cur.placed = state.placed.map(clonePlaced);
+  state.checks = runChecks(state.P as NonNullable<typeof state.P>);
+  state.exportMetrics = null;
+  renderVersions();
+  renderPlan2D();
+  renderChecks();
+  updatePlanHeader();
 }
 export type ImportSource =
   { kind: 'file'; json: PlanJson; file?: string } | { kind: 'pipeline' | 'sample'; key: string };

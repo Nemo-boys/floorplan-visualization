@@ -5,7 +5,10 @@ import { state } from '../state';
 import { tour } from '../view3d/tour';
 import { $ } from './dom';
 import { MARK } from './icons';
-import { endTour, focusRoom, renderEditTools, renderReviewInfo } from './pending';
+import { focusRoom } from '../view3d/marks';
+import { endTour } from '../view3d/tour';
+import { renderEditTools } from './edit';
+import { renderReviewInfo } from './review';
 
 export function renderPlan2D(): void {
   if (!state.P) return;

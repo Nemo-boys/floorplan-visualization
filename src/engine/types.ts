@@ -130,8 +130,10 @@ export interface FurnItem {
   tall?: boolean;
   seats?: number;
   tone?: string;
-  /* Placed by hand in the editor. */
+  /* Placed by hand in the editor. The view keeps its 3D object and the last accepted position on it. */
   placed?: boolean;
+  obj?: unknown;
+  _prev?: { x: number; y: number; dir: Vec };
 }
 export type FurnOpts = Partial<Omit<FurnItem, 'kind' | 'x' | 'y' | 'dir'>>;
 export type Pose = 'sit' | 'stand';

@@ -4,18 +4,12 @@ import { R3 } from '../view3d/r3';
 import { $, reduceMotion } from './dom';
 import { refreshPlanOverlay } from './plan-panel';
 import { resize } from './resize';
-import {
-  applyDock,
-  endTour,
-  exitEdit,
-  renderEditTools,
-  renderExport,
-  renderReviewInfo,
-  setSimTab,
-  setView,
-  updateLive,
-  updateTransport
-} from './pending';
+import { setView } from '../view3d/cameras';
+import { endTour } from '../view3d/tour';
+import { applyDock } from './dock';
+import { exitEdit, renderEditTools } from './edit';
+import { renderExport, setSimTab, updateLive, updateTransport } from './pending';
+import { renderReviewInfo } from './review';
 
 export const STEPS: StepName[] = ['import', 'review', 'simulate', 'export'];
 export function moveGlider(): void {

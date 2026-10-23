@@ -8,6 +8,8 @@ import { loadDock } from './dock';
 import { $, reduceMotion } from './dom';
 import { renderSampleThumbs, updatePlanHeader } from './import';
 import { ROLE_DOTS } from './icons';
+import { refreshPlanOverlay } from './plan-panel';
+import { planPeople } from '../plan2d/overlay';
 import {
   applyDock,
   bindDock,
@@ -18,7 +20,6 @@ import {
   initSimulate,
   initThree,
   paintHeat,
-  planPeople,
   renderExport,
   roomNow,
   updateLive,
@@ -72,6 +73,17 @@ export function bindUI(): void {
           '. The page expects plan.json v0.1: rooms with "rect" or "polygon_mm", and doors with "center_mm".';
       });
   });
+  const route = (id: string, key: 'journey' | 'staff' | 'egress'): void =>
+    $(id).addEventListener('change', e => {
+      const on = (e.target as HTMLInputElement).checked;
+      state.planRoutes[key] = on;
+      state.routes[key] = on;
+      if (R3 && R3.routeMeshes) R3.routeMeshes[key].visible = on;
+      refreshPlanOverlay();
+    });
+  route('#rJourney', 'journey');
+  route('#rStaff', 'staff');
+  route('#rEgress', 'egress');
   bindDock();
   $('#assistantBtn').addEventListener('click', () => toggleChat());
   $('#chatClose').addEventListener('click', () => toggleChat(false));
@@ -105,7 +117,7 @@ export function loop(ts: number): void {
   if (state.P) {
     updateLive(false);
     if (is2DVisible() && ts - lastPeople2d > 140) {
-      planPeople(document.querySelector<SVGElement>('#plan2d svg'), state.P, sim, ROLE_DOTS);
+      planPeople(document.querySelector('#plan2d svg'), state.P, sim, ROLE_DOTS);
       lastPeople2d = ts;
     }
     if (ts - lastCaption > 700) {

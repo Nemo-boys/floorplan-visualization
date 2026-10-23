@@ -2,12 +2,12 @@
 import { state, type StepName } from '../state';
 import { R3 } from '../view3d/r3';
 import { $, reduceMotion } from './dom';
+import { refreshPlanOverlay } from './plan-panel';
 import { resize } from './resize';
 import {
   applyDock,
   endTour,
   exitEdit,
-  refreshPlanOverlay,
   renderEditTools,
   renderExport,
   renderReviewInfo,

@@ -5,6 +5,7 @@ import { R3 } from '../view3d/r3';
 import { tour } from '../view3d/tour';
 import { $ } from './dom';
 import { renderImportSummary, updatePlanHeader } from './import';
+import { renderPlan2D } from './plan-panel';
 import {
   buildScene,
   fillRoomDefaults,
@@ -14,7 +15,6 @@ import {
   renderDockThumb,
   renderEditTools,
   renderExport,
-  renderPlan2D,
   renderReviewInfo,
   renderVersions,
   resetSim,

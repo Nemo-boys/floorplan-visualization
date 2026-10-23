@@ -1,0 +1,22 @@
+# The specification stays exactly as delivered.
+design/
+reference-src/
+contracts/
+samples/
+tools/
+tests/golden/*.json
+tests/golden/*.svg
+tests/golden/*.sha256
+# Ported verbatim from the reference.
+src/styles/
+index.html
+# Generated.
+dist/
+tests/visual/reference/
+tests/visual/output/
+tests/visual/diff/
+playwright-report/
+test-results/
+package-lock.json
+# Docs are written by hand.
+*.md

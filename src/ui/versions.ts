@@ -11,7 +11,7 @@ import { PLACE_NAMES, selectItem, stopPlacing } from '../view3d/placement';
 import { buildScene } from '../view3d/scene';
 import { renderDockThumb } from './dock';
 import { renderEditTools, renderVersions } from './edit';
-import { renderExport } from './pending';
+import { renderExport } from './export-step';
 import { renderBuilder } from './simulate/builder';
 import { renderChecks } from './simulate/results';
 import { renderReviewInfo, updateRouteText } from './review';

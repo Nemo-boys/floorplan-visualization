@@ -3,6 +3,7 @@
 import { state } from '../state';
 import { endTour, nextTourStop, startTour, tour } from '../view3d/tour';
 import { runCompare } from './compare';
+import { exportBundle, planJsonExport } from '../export/bundle';
 import { applySwap } from './edit';
 import { addBlock, moveBlock } from './simulate/builder';
 import { compareHistory } from './simulate/history';
@@ -30,6 +31,8 @@ export function exposeTestHooks(): void {
     runSweep,
     runCompare,
     compareHistory,
-    applySwap
+    applySwap,
+    exportBundle,
+    planJsonExport
   };
 }

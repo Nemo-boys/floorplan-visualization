@@ -8,7 +8,7 @@ import { setView } from '../view3d/cameras';
 import { endTour } from '../view3d/tour';
 import { applyDock } from './dock';
 import { exitEdit, renderEditTools } from './edit';
-import { renderExport } from './pending';
+import { renderExport } from './export-step';
 import { setSimTab } from './simulate';
 import { updateLive, updateTransport } from './transport';
 import { renderReviewInfo } from './review';

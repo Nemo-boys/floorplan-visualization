@@ -16,7 +16,7 @@ import { $, reduceMotion } from './dom';
 import { applyRename, applySwap, enterEdit, exitEdit, renderEditTools, renderPlanHint, syncEditMarks } from './edit';
 import { renderSampleThumbs, updatePlanHeader } from './import';
 import { ROLE_DOTS } from './icons';
-import { renderExport } from './pending';
+import { bindExport, renderExport } from './export-step';
 import { refreshPlanOverlay } from './plan-panel';
 import { resize } from './resize';
 import { onTourStop, renderReviewInfo, roomNow } from './review';
@@ -176,6 +176,7 @@ export function bindUI(): void {
   $('#lyrWaits').addEventListener('change', e => {
     state.layers.waits = (e.target as HTMLInputElement).checked;
   });
+  bindExport();
   $('#assistantBtn').addEventListener('click', () => toggleChat());
   $('#chatClose').addEventListener('click', () => toggleChat(false));
   window.addEventListener('keydown', e => {

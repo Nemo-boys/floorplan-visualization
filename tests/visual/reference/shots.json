@@ -1,0 +1,506 @@
+[
+  {
+    "vp": "desktop-light",
+    "name": "import-empty",
+    "file": "desktop-light--import-empty.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-light",
+    "name": "import-loaded",
+    "file": "desktop-light--import-loaded.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-light",
+    "name": "review",
+    "file": "desktop-light--review.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "review-dock-open",
+    "file": "desktop-light--review-dock-open.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "review-room-card",
+    "file": "desktop-light--review-room-card.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "review-tour",
+    "file": "desktop-light--review-tour.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "review-full-walls",
+    "file": "desktop-light--review-full-walls.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "edit-swap",
+    "file": "desktop-light--edit-swap.png",
+    "canvas": {
+      "x": 329,
+      "y": 148,
+      "width": 1094,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "edit-rename",
+    "file": "desktop-light--edit-rename.png",
+    "canvas": {
+      "x": 329,
+      "y": 148,
+      "width": 1094,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "edit-furniture",
+    "file": "desktop-light--edit-furniture.png",
+    "canvas": {
+      "x": 329,
+      "y": 148,
+      "width": 1094,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "simulate-scenario",
+    "file": "desktop-light--simulate-scenario.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-light",
+    "name": "simulate-custom",
+    "file": "desktop-light--simulate-custom.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-light",
+    "name": "simulate-results",
+    "file": "desktop-light--simulate-results.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1024,
+      "height": 650
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "simulate-results-flu",
+    "file": "desktop-light--simulate-results-flu.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1024,
+      "height": 650
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "simulate-history",
+    "file": "desktop-light--simulate-history.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-light",
+    "name": "compare-layouts",
+    "file": "desktop-light--compare-layouts.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1024,
+      "height": 650
+    }
+  },
+  {
+    "vp": "desktop-light",
+    "name": "export",
+    "file": "desktop-light--export.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-light",
+    "name": "assistant",
+    "file": "desktop-light--assistant.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1018,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "import-empty",
+    "file": "desktop-dark--import-empty.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "import-loaded",
+    "file": "desktop-dark--import-loaded.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "review",
+    "file": "desktop-dark--review.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "review-dock-open",
+    "file": "desktop-dark--review-dock-open.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "review-room-card",
+    "file": "desktop-dark--review-room-card.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "review-tour",
+    "file": "desktop-dark--review-tour.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "review-full-walls",
+    "file": "desktop-dark--review-full-walls.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1406,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "edit-swap",
+    "file": "desktop-dark--edit-swap.png",
+    "canvas": {
+      "x": 329,
+      "y": 148,
+      "width": 1094,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "edit-rename",
+    "file": "desktop-dark--edit-rename.png",
+    "canvas": {
+      "x": 329,
+      "y": 148,
+      "width": 1094,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "edit-furniture",
+    "file": "desktop-dark--edit-furniture.png",
+    "canvas": {
+      "x": 329,
+      "y": 148,
+      "width": 1094,
+      "height": 737
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "simulate-scenario",
+    "file": "desktop-dark--simulate-scenario.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "simulate-custom",
+    "file": "desktop-dark--simulate-custom.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "simulate-results",
+    "file": "desktop-dark--simulate-results.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1024,
+      "height": 650
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "simulate-results-flu",
+    "file": "desktop-dark--simulate-results-flu.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1024,
+      "height": 650
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "simulate-history",
+    "file": "desktop-dark--simulate-history.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "compare-layouts",
+    "file": "desktop-dark--compare-layouts.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1024,
+      "height": 650
+    }
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "export",
+    "file": "desktop-dark--export.png",
+    "canvas": null
+  },
+  {
+    "vp": "desktop-dark",
+    "name": "assistant",
+    "file": "desktop-dark--assistant.png",
+    "canvas": {
+      "x": 17,
+      "y": 148,
+      "width": 1018,
+      "height": 737
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "import-empty",
+    "file": "phone-light--import-empty.png",
+    "canvas": null
+  },
+  {
+    "vp": "phone-light",
+    "name": "import-loaded",
+    "file": "phone-light--import-loaded.png",
+    "canvas": null
+  },
+  {
+    "vp": "phone-light",
+    "name": "review",
+    "file": "phone-light--review.png",
+    "canvas": {
+      "x": 17,
+      "y": 198,
+      "width": 356,
+      "height": 631
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "review-dock-open",
+    "file": "phone-light--review-dock-open.png",
+    "canvas": {
+      "x": 17,
+      "y": 198,
+      "width": 356,
+      "height": 631
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "review-room-card",
+    "file": "phone-light--review-room-card.png",
+    "canvas": {
+      "x": 17,
+      "y": 198,
+      "width": 356,
+      "height": 631
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "review-tour",
+    "file": "phone-light--review-tour.png",
+    "canvas": {
+      "x": 17,
+      "y": 198,
+      "width": 356,
+      "height": 631
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "review-full-walls",
+    "file": "phone-light--review-full-walls.png",
+    "canvas": {
+      "x": 17,
+      "y": 198,
+      "width": 356,
+      "height": 631
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "edit-swap",
+    "file": "phone-light--edit-swap.png",
+    "canvas": {
+      "x": 17,
+      "y": 553,
+      "width": 356,
+      "height": 276
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "edit-rename",
+    "file": "phone-light--edit-rename.png",
+    "canvas": {
+      "x": 17,
+      "y": 553,
+      "width": 356,
+      "height": 276
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "edit-furniture",
+    "file": "phone-light--edit-furniture.png",
+    "canvas": {
+      "x": 17,
+      "y": 553,
+      "width": 356,
+      "height": 276
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "simulate-scenario",
+    "file": "phone-light--simulate-scenario.png",
+    "canvas": null
+  },
+  {
+    "vp": "phone-light",
+    "name": "simulate-custom",
+    "file": "phone-light--simulate-custom.png",
+    "canvas": null
+  },
+  {
+    "vp": "phone-light",
+    "name": "simulate-results",
+    "file": "phone-light--simulate-results.png",
+    "canvas": {
+      "x": 17,
+      "y": 251,
+      "width": 356,
+      "height": 278
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "simulate-results-flu",
+    "file": "phone-light--simulate-results-flu.png",
+    "canvas": {
+      "x": 17,
+      "y": 251,
+      "width": 356,
+      "height": 278
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "simulate-history",
+    "file": "phone-light--simulate-history.png",
+    "canvas": null
+  },
+  {
+    "vp": "phone-light",
+    "name": "compare-layouts",
+    "file": "phone-light--compare-layouts.png",
+    "canvas": {
+      "x": 17,
+      "y": 251,
+      "width": 356,
+      "height": 278
+    }
+  },
+  {
+    "vp": "phone-light",
+    "name": "export",
+    "file": "phone-light--export.png",
+    "canvas": null
+  },
+  {
+    "vp": "phone-light",
+    "name": "assistant",
+    "file": "phone-light--assistant.png",
+    "canvas": {
+      "x": 17,
+      "y": 198,
+      "width": 356,
+      "height": 631
+    }
+  }
+]

@@ -4,6 +4,7 @@
  *   tsx tests/visual/capture.ts [baseUrl] [outDir]
  *     baseUrl  default http://localhost:5174/reference.html  (start it with: npm run reference)
  *     outDir   default tests/visual/reference
+ *   CAPTURE_ONLY=edit-swap,export  re-captures only those states and keeps the other shots already in outDir.
  *
  * Ported from tools/capture-reference.mjs: same states, steps, freeze and reference adjustments.
  * It also writes shots.json with each shot's 3D canvas rectangle, which compare.ts uses for the
@@ -24,7 +25,9 @@ export interface Viewport {
   hasTouch?: boolean;
 }
 
-export type Step = ['click', string] | ['wait', number] | ['eval', string] | ['check', string, number];
+// A click can name a point inside the element, as fractions of its box (default: the center).
+export type Step =
+  ['click', string, { fx: number; fy: number }?] | ['wait', number] | ['eval', string] | ['check', string, number];
 
 export interface ShotState {
   name: string;
@@ -95,7 +98,8 @@ export const STATES: ShotState[] = [
     steps: [
       ['wait', 800],
       ['click', '.plansvg .room[data-id="nurse_station_1"]'],
-      ['click', '.plansvg .room[data-id="exam_room_5"]']
+      // A nurse's dot sits on the center of exam_room_5 and takes the click, so click its upper-left quarter.
+      ['click', '.plansvg .room[data-id="exam_room_5"]', { fx: 0.25, fy: 0.25 }]
     ]
   },
   {
@@ -163,9 +167,13 @@ const CANVAS_RECT = `(() => {
 
 async function runStep(page: Page, step: Step): Promise<void> {
   switch (step[0]) {
-    case 'click':
-      await page.locator(step[1]).first().click();
+    case 'click': {
+      const el = page.locator(step[1]).first();
+      const at = step[2];
+      const box = at ? await el.boundingBox() : null;
+      await el.click(box && at ? { position: { x: box.width * at.fx, y: box.height * at.fy } } : {});
       break;
+    }
     case 'wait':
       await page.waitForTimeout(step[1]);
       break;
@@ -218,6 +226,12 @@ async function main(): Promise<number> {
     return 1;
   }
   const browser = await chromium.launch();
+  const only = process.env.CAPTURE_ONLY ? process.env.CAPTURE_ONLY.split(',') : null;
+  const manifest = path.join(outDir, 'shots.json');
+  const kept: Shot[] =
+    only && fs.existsSync(manifest)
+      ? (JSON.parse(fs.readFileSync(manifest, 'utf8')) as Shot[]).filter(s => !only.includes(s.name))
+      : [];
   const shots: Shot[] = [];
   const failures: string[] = [];
   fs.mkdirSync(outDir, { recursive: true });
@@ -237,7 +251,7 @@ async function main(): Promise<number> {
         /* no storage */
       }
     });
-    for (const st of STATES) {
+    for (const st of STATES.filter(s => !only || only.includes(s.name))) {
       const page = await context.newPage();
       const file = vp.tag + '--' + st.name + '.png';
       try {
@@ -259,8 +273,11 @@ async function main(): Promise<number> {
     await context.close();
   }
   await browser.close();
-  fs.writeFileSync(path.join(outDir, 'index.html'), contactSheet(shots));
-  fs.writeFileSync(path.join(outDir, 'shots.json'), JSON.stringify(shots, null, 2) + '\n');
+  const order = (s: Shot): number =>
+    VIEWPORTS.findIndex(v => v.tag === s.vp) * STATES.length + STATES.findIndex(t => t.name === s.name);
+  const all = kept.concat(shots).sort((a, b) => order(a) - order(b));
+  fs.writeFileSync(path.join(outDir, 'index.html'), contactSheet(all));
+  fs.writeFileSync(manifest, JSON.stringify(all, null, 2) + '\n');
   console.log(
     shots.length + ' screenshots in ' + outDir + (failures.length ? '\nFailed:\n  ' + failures.join('\n  ') : '')
   );

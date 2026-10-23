@@ -1,42 +1,73 @@
-# Floorplan Intelligence: handoff for Claude Code
+# Floorplan Intelligence: Review, Simulate and Export
 
-Everything Claude Code needs to build the Review, Simulate and Export app (Modules 3 and 4) from the approved preview, so the result looks and behaves the same as the design.
+Modules 3 and 4 of Floorplan Intelligence, for the Nebius × NVIDIA Global AI Hackathon 2026. A team imports a clinic floor plan, reviews it in 3D, simulates clinic days, and exports the final plan for Blender.
 
-## How to start
+It is a static web app: everything runs in the browser, with no backend, no API keys and no calls to other services. The assistant, the Module 1 plan generator and the Module 2 rule checker connect later; until then the app uses stand-ins (see [docs/INTEGRATION.md](docs/INTEGRATION.md)).
 
-1. Make an empty folder for the repo, unzip this bundle into it so `CLAUDE.md` sits at the top level, and run `git init`.
-2. Install Node 20 or newer. Claude Code installs everything else in Phase 0. It needs internet for npm, for Playwright’s Chromium, and for the reference page, which loads three.js and its font from CDNs.
-3. Open Claude Code in the folder and say:
+The app is a port of the approved design in [design/reference.html](design/reference.html) and looks and behaves the same. Tests compare the two all the time; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-   > Read CLAUDE.md and PLAN.md, then start Phase 0. Stop at each gate and show me the results.
+## Setup
 
-4. At each gate, look at the screenshots and test results. Then say “approved, next phase”, or say what to change.
+You need Node 20 or newer. Then:
 
-## What’s inside
+```sh
+npm install
+npx playwright install chromium   # for the end-to-end and screenshot tests
+npm run dev                       # http://localhost:5173
+```
+
+Google Chrome is needed only for the WebGPU checks (`test:visual:webgpu`, `test:visual:webgl`, `test:perf`), because Playwright's own Chromium has no WebGPU adapter.
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | The app on http://localhost:5173 |
+| `npm run reference` | The approved design on http://localhost:5174/reference.html, for side-by-side checks (needs internet: it loads three.js from a CDN) |
+| `npm run build` | Typecheck, then the static production build in `dist/` |
+| `npm run check` | Typecheck, lint, then the unit, parity and golden tests |
+| `npm test` | Unit, parity and golden tests (Vitest) |
+| `npm run test:e2e` | Playwright tests against the app. `E2E_TARGET=reference` runs the same tests against the design |
+| `npm run test:visual` | Screenshots of 18 states in 3 viewports, compared with `tests/visual/reference/` |
+| `npm run test:visual:webgpu` | The same in Google Chrome with WebGPU |
+| `npm run test:visual:webgl` | The same in Google Chrome with WebGPU turned off (WebGL2) |
+| `npm run test:perf` | Guided-tour frame rate in Chrome, with WebGPU and with WebGL2 |
+| `npm run perf:startup` | Startup timing of the production build next to the design (serve `dist/` with `npx vite preview` first) |
+| `npm run golden:check` | Confirms the golden files in `tests/golden/` still match the design |
+| `npm run capture:reference` | Re-captures the reference screenshots (only when the design changes) |
+
+`test:e2e` starts the dev server (or, for the reference target, the reference server) if it isn't running. One app test compares the export bundle with the design's, so keep `npm run reference` running too. `test:visual` needs `npm run dev` running.
+
+## How it's built
+
+- Vite and TypeScript in strict mode, plain DOM (no UI framework), three.js 0.186.1.
+- The 3D view uses WebGPU when the browser has it and WebGL2 otherwise. The badge in the top bar says which.
+- The engine (plan analysis, pathfinding, the day simulation, scenario blocks) is pure TypeScript in `src/engine/` and is deterministic: the same plan, scenario and seed always give the same numbers.
+
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the data flow, the state, the render loop and where each part lives. [docs/DECISIONS.md](docs/DECISIONS.md) explains the choices behind the design.
+
+## Tests
+
+| Layer | Where | What it proves |
+|---|---|---|
+| Golden | `tests/golden/*.test.ts` | The engine reproduces every number in `tests/golden/` (layouts, 9 × 20-day runs, validation messages), and the 2D drawing byte for byte |
+| Parity | `tests/unit/*-parity.test.ts` | The engine, 2D drawing and export writers give the same output as `reference-src/` on many more inputs, and the CSS and markup are the reference's |
+| End-to-end | `tests/e2e/` | Every step, with the same tests passing on the app and on the design. Includes axe on every step and a keyboard-only run |
+| Screenshots | `tests/visual/` | 54 screenshots within the tolerances in PLAN.md |
+
+## Deploy
+
+`npm run build` writes a static site to `dist/`. Any static host can serve it. See [docs/DEPLOY.md](docs/DEPLOY.md).
+
+## Where things are
 
 | Path | What it is |
 |---|---|
-| `CLAUDE.md` | Standing rules Claude Code loads every session |
-| `PLAN.md` | Phases 0 to 9 with tasks and gates, the planned differences, screenshot states and tolerances |
-| `design/reference.html` | The approved design: the full working preview in one file. Open it in a browser with internet. |
-| `design/UI-SPEC.md` | Every screen, state, interaction and key piece of copy |
-| `design/ui-inventory.md` | Every control’s id, class and data attributes |
-| `design/design-tokens.md` | Colors for light and dark, type, shape and motion |
-| `reference-src/` | The preview’s source files, plus a function-by-function port map |
-| `contracts/` | plan.json v0.1, scenario.v1 (generated from the block registry), the export bundle, browser storage |
-| `samples/` | The three sample plans and seven scenarios: the presets, one using every block type, and two that exercise the checks |
-| `tests/golden/` | Exact expected engine numbers, validation messages and the 2D drawing |
-| `tools/` | `make-golden.mjs` regenerates or verifies golden data; `capture-reference.mjs` screenshots every state; `serve-reference.mjs` serves the reference |
-| `docs/` | Architecture, decisions, and the deviations log, with two open questions |
-
-## Not in this build
-
-The app runs entirely in the browser, with no backend and no keys. The team connects these later:
-
-- **The assistant:** the Assistant button and drawer are there, with a placeholder line.
-- **Module 1, plans from the generator:** the pipeline card opens the bundled sample plan, and upload works.
-- **Module 2, U.S. rule checks:** the five example checks stand in as placeholder data.
-
-## Sharing with the team
-
-Commit this whole folder together with the code. `design/`, `reference-src/`, `contracts/`, `samples/` and `tests/golden/` stay in the repo as the specification that the tests compare against.
+| `src/` | The app |
+| `design/` | The approved design and its specs: screens, controls, colors (read-only) |
+| `reference-src/` | The design's source, with a function-by-function port map (read-only) |
+| `contracts/` | plan.json v0.1, scenario.v1, the export bundle, browser storage (read-only) |
+| `samples/` | Three sample plans and seven scenarios (read-only) |
+| `tests/` | Golden, parity, end-to-end, screenshot and performance tests |
+| `docs/` | Architecture, decisions, deviations from the design, integration, deploy, demo |
+| `PLAN.md`, `CLAUDE.md` | The phased plan this build followed, and the rules for working on it |

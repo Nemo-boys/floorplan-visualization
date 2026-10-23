@@ -8,3 +8,4 @@ tests/visual/output/
 tests/visual/diff/
 *.log
 .DS_Store
+reports/

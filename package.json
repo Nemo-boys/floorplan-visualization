@@ -19,17 +19,20 @@
     "test:e2e": "playwright test --pass-with-no-tests",
     "capture:reference": "tsx tests/visual/capture.ts http://localhost:5174/reference.html tests/visual/reference",
     "test:visual": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output && tsx tests/visual/compare.ts",
-    "golden:check": "node tools/make-golden.mjs --check"
+    "golden:check": "node tools/make-golden.mjs --check",
+    "test:visual:webgpu": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output/chrome-webgpu --chrome && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgpu tests/visual/diff/chrome-webgpu",
+    "test:visual:webgl": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output/chrome-webgl --chrome --no-webgpu && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgl tests/visual/diff/chrome-webgl",
+    "test:perf": "tsx tests/perf/tour-fps.ts"
   },
   "dependencies": {
-    "three": "0.159.0"
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@types/pngjs": "^6.0.5",
-    "@types/three": "0.159.0",
+    "@types/three": "0.186.0",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
     "gltf-validator": "^2.0.0-dev.3.10",

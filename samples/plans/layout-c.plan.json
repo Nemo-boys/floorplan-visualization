@@ -1,0 +1,501 @@
+{
+  "schema_version": "0.1",
+  "units": "mm",
+  "origin": "bottom-left; x = east, y = north",
+  "building_type": "clinic",
+  "name": "Layout C",
+  "blurb": "Lobby in the middle, nurse station surrounded by the exam rooms",
+  "footprint": {
+    "width_mm": 24000,
+    "depth_mm": 10200
+  },
+  "rooms": [
+    {
+      "id": "lab_1",
+      "type": "lab",
+      "label": "Lab",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 0,
+        "y_mm": 0,
+        "w_mm": 2400,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "staff_lounge_1",
+      "type": "staff_lounge",
+      "label": "Staff lounge",
+      "zone": "staff",
+      "rect": {
+        "x_mm": 2400,
+        "y_mm": 0,
+        "w_mm": 3600,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "provider_office_1",
+      "type": "provider_office",
+      "label": "Provider office",
+      "zone": "staff",
+      "rect": {
+        "x_mm": 6000,
+        "y_mm": 0,
+        "w_mm": 3000,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "restroom_1",
+      "type": "restroom",
+      "label": "Restroom 1",
+      "zone": "public",
+      "rect": {
+        "x_mm": 9000,
+        "y_mm": 0,
+        "w_mm": 2100,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "waiting_1",
+      "type": "waiting",
+      "label": "Waiting",
+      "zone": "public",
+      "rect": {
+        "x_mm": 11100,
+        "y_mm": 0,
+        "w_mm": 7200,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "reception_1",
+      "type": "reception",
+      "label": "Reception",
+      "zone": "public",
+      "rect": {
+        "x_mm": 18300,
+        "y_mm": 0,
+        "w_mm": 3000,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "exam_room_1",
+      "type": "exam_room",
+      "label": "Exam 1",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 21300,
+        "y_mm": 0,
+        "w_mm": 2700,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "storage_1",
+      "type": "storage",
+      "label": "Storage",
+      "zone": "support",
+      "rect": {
+        "x_mm": 0,
+        "y_mm": 6000,
+        "w_mm": 1800,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "clean_utility_1",
+      "type": "clean_utility",
+      "label": "Clean utility",
+      "zone": "support",
+      "rect": {
+        "x_mm": 1800,
+        "y_mm": 6000,
+        "w_mm": 2100,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "soiled_utility_1",
+      "type": "soiled_utility",
+      "label": "Soiled utility",
+      "zone": "support",
+      "rect": {
+        "x_mm": 3900,
+        "y_mm": 6000,
+        "w_mm": 2100,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "restroom_2",
+      "type": "restroom",
+      "label": "Restroom 2",
+      "zone": "public",
+      "rect": {
+        "x_mm": 6000,
+        "y_mm": 6000,
+        "w_mm": 2100,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "exam_room_2",
+      "type": "exam_room",
+      "label": "Exam 2",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 8100,
+        "y_mm": 6000,
+        "w_mm": 2700,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "exam_room_3",
+      "type": "exam_room",
+      "label": "Exam 3",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 10800,
+        "y_mm": 6000,
+        "w_mm": 2700,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "nurse_station_1",
+      "type": "nurse_station",
+      "label": "Nurse station",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 13500,
+        "y_mm": 6000,
+        "w_mm": 2400,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "exam_room_4",
+      "type": "exam_room",
+      "label": "Exam 4",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 15900,
+        "y_mm": 6000,
+        "w_mm": 2700,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "exam_room_5",
+      "type": "exam_room",
+      "label": "Exam 5",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 18600,
+        "y_mm": 6000,
+        "w_mm": 2700,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "exam_room_6",
+      "type": "exam_room",
+      "label": "Exam 6",
+      "zone": "clinical",
+      "rect": {
+        "x_mm": 21300,
+        "y_mm": 6000,
+        "w_mm": 2700,
+        "h_mm": 4200
+      }
+    },
+    {
+      "id": "corridor_1",
+      "type": "corridor",
+      "label": "Corridor",
+      "zone": "circulation",
+      "rect": {
+        "x_mm": 0,
+        "y_mm": 4200,
+        "w_mm": 24000,
+        "h_mm": 1800
+      }
+    }
+  ],
+  "doors": [
+    {
+      "id": "door_1",
+      "kind": "door",
+      "connects": [
+        "lab_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        1200,
+        4200
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_2",
+      "kind": "door",
+      "connects": [
+        "staff_lounge_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        4200,
+        4200
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_3",
+      "kind": "door",
+      "connects": [
+        "provider_office_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        7500,
+        4200
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_4",
+      "kind": "door",
+      "connects": [
+        "restroom_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        10050,
+        4200
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_5",
+      "kind": "door",
+      "connects": [
+        "waiting_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        14700,
+        4200
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_6",
+      "kind": "door",
+      "connects": [
+        "reception_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        19800,
+        4200
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_7",
+      "kind": "door",
+      "connects": [
+        "exam_room_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        22650,
+        4200
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_8",
+      "kind": "door",
+      "connects": [
+        "storage_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        900,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_9",
+      "kind": "door",
+      "connects": [
+        "clean_utility_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        2850,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_10",
+      "kind": "door",
+      "connects": [
+        "soiled_utility_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        4950,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_11",
+      "kind": "door",
+      "connects": [
+        "restroom_2",
+        "corridor_1"
+      ],
+      "center_mm": [
+        7050,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_12",
+      "kind": "door",
+      "connects": [
+        "exam_room_2",
+        "corridor_1"
+      ],
+      "center_mm": [
+        9450,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_13",
+      "kind": "door",
+      "connects": [
+        "exam_room_3",
+        "corridor_1"
+      ],
+      "center_mm": [
+        12150,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_14",
+      "kind": "door",
+      "connects": [
+        "nurse_station_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        14700,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_15",
+      "kind": "door",
+      "connects": [
+        "exam_room_4",
+        "corridor_1"
+      ],
+      "center_mm": [
+        17250,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_16",
+      "kind": "door",
+      "connects": [
+        "exam_room_5",
+        "corridor_1"
+      ],
+      "center_mm": [
+        19950,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_17",
+      "kind": "door",
+      "connects": [
+        "exam_room_6",
+        "corridor_1"
+      ],
+      "center_mm": [
+        22650,
+        6000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_18",
+      "kind": "opening",
+      "connects": [
+        "reception_1",
+        "waiting_1"
+      ],
+      "center_mm": [
+        18300,
+        2100
+      ],
+      "width_mm": 1800,
+      "is_entrance": false
+    },
+    {
+      "id": "door_19",
+      "kind": "door",
+      "connects": [
+        "waiting_1",
+        "exterior"
+      ],
+      "center_mm": [
+        14700,
+        0
+      ],
+      "width_mm": 1800,
+      "is_entrance": true
+    }
+  ],
+  "provenance": {
+    "intent_source": "hand-made sample for the preview"
+  }
+}

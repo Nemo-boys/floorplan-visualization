@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Floorplan Intelligence: review, simulate and export a clinic plan (design preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #eef1ef; --sky: #d9e2ea; --horizon: #eef1ef; --ground: #dde2dc;
+  --panel: #fbfcfb; --card: #ffffff; --field: #ffffff; --glass: rgba(251, 252, 251, 0.9);
+  --ink: #1f2b36; --ink-2: #576673; --rule: rgba(31, 43, 54, 0.12); --rule-2: rgba(31, 43, 54, 0.2);
+  --accent: #2453d6; --accent-ink: #ffffff; --accent-soft: rgba(36, 83, 214, 0.1);
+  --staff: #11806a; --egress: #c73a1f; --warn: #d39417; --pass: #11806a; --fail: #c73a1f;
+  --z-public: #c9dff1; --z-clinical: #cfe8d7; --z-staff: #f0e3bd; --z-support: #e0d7ef; --z-circulation: #e8ebea;
+  --r-patient: #2453d6; --r-nurse: #11806a; --r-provider: #8b3fb0; --r-reception: #5d6b78;
+  --focus: #2453d6;
+  --shadow: 0 1px 2px rgba(20, 30, 40, 0.08), 0 8px 24px rgba(20, 30, 40, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11171c; --sky: #1c252e; --horizon: #10161b; --ground: #192026;
+    --panel: #172027; --card: #1b252d; --field: #1b252d; --glass: rgba(23, 32, 39, 0.9);
+    --ink: #e6edf1; --ink-2: #a5b3bc; --rule: rgba(255, 255, 255, 0.1); --rule-2: rgba(255, 255, 255, 0.18);
+    --accent: #86a6ff; --accent-ink: #0c1633; --accent-soft: rgba(134, 166, 255, 0.15);
+    --staff: #52c7aa; --egress: #ff7f61; --warn: #f0b445; --pass: #52c7aa; --fail: #ff7f61;
+    --z-public: #2c4b63; --z-clinical: #2d5240; --z-staff: #5b4e2b; --z-support: #463e5d; --z-circulation: #2a3339;
+    --r-patient: #86a6ff; --r-nurse: #52c7aa; --r-provider: #d590f2; --r-reception: #9eabb4;
+    --focus: #86a6ff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11171c; --sky: #1c252e; --horizon: #10161b; --ground: #192026;
+  --panel: #172027; --card: #1b252d; --field: #1b252d; --glass: rgba(23, 32, 39, 0.9);
+  --ink: #e6edf1; --ink-2: #a5b3bc; --rule: rgba(255, 255, 255, 0.1); --rule-2: rgba(255, 255, 255, 0.18);
+  --accent: #86a6ff; --accent-ink: #0c1633; --accent-soft: rgba(134, 166, 255, 0.15);
+  --staff: #52c7aa; --egress: #ff7f61; --warn: #f0b445; --pass: #52c7aa; --fail: #ff7f61;
+  --z-public: #2c4b63; --z-clinical: #2d5240; --z-staff: #5b4e2b; --z-support: #463e5d; --z-circulation: #2a3339;
+  --r-patient: #86a6ff; --r-nurse: #52c7aa; --r-provider: #d590f2; --r-reception: #9eabb4;
+  --focus: #86a6ff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+*, *::before, *::after { box-sizing: border-box; }
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--ink); font: 14.5px/1.45 "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2.5px solid var(--focus); outline-offset: 2px; }
+h2, h3 { margin: 0; }
+.muted { color: var(--ink-2); }
+.small { font-size: 12.5px; }
+[hidden] { display: none !important; }
+.app { position: relative; height: 100%; display: flex; flex-direction: column; }
+
+/* Top bar and step tabs */
+.topbar { flex: none; display: grid; grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr); align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--rule); background: var(--panel); position: relative; z-index: 5; }
+.brand h1 { margin: 0; font-size: 17px; line-height: 1.2; }
+.brand p { margin: 1px 0 0; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand b { color: var(--ink); }
+.stepper { position: relative; display: flex; gap: 2px; padding: 4px; border-radius: 13px; background: var(--bg); border: 1px solid var(--rule); }
+.stepper .glider { position: absolute; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 9px; background: var(--card); box-shadow: 0 1px 3px rgba(20, 30, 40, 0.14); transition: transform 280ms cubic-bezier(.3, .7, .2, 1), width 280ms cubic-bezier(.3, .7, .2, 1); }
+.stepper button { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; padding: 7px 14px 7px 9px; border-radius: 9px; cursor: pointer; font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+.stepper button[aria-selected="true"] { color: var(--ink); font-weight: 700; }
+.stepper button:disabled { cursor: not-allowed; opacity: 0.45; }
+.stepper .num { width: 21px; height: 21px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--rule); color: var(--ink-2); }
+.stepper button[aria-selected="true"] .num { background: var(--accent); color: var(--accent-ink); }
+.stepper button.done .num { background: var(--staff); color: #fff; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.badge { padding: 5px 10px; border-radius: 999px; font-size: 12px; border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; }
+.btn { border: 1px solid var(--rule-2); background: var(--field); border-radius: 9px; padding: 7px 13px; cursor: pointer; font-size: 13.5px; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.btn.small { padding: 4px 9px; font-size: 12.5px; }
+.btn.ghost { background: transparent; }
+.assistant-btn { display: inline-flex; gap: 7px; align-items: center; }
+.assistant-btn svg { width: 16px; height: 16px; }
+.assistant-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+/* Workspace: each step shows only its own parts */
+.workspace { flex: 1; min-height: 0; display: grid; gap: 12px; padding: 12px 16px 14px; transition: padding-right 220ms ease; }
+.app.chat-open .workspace { padding-right: 404px; }
+#importView, #reviewBar, #splitArea, #editTools, #simPanel, #transport, #exportView, #simBar, #palette, #scnCanvas, #checkPanel, #historyView { display: none; min-height: 0; }
+.step-import .workspace, .step-export .workspace { grid-template-columns: 1fr; }
+.step-import #importView, .step-export #exportView { display: block; overflow-y: auto; animation: rise 220ms ease; }
+.step-review .workspace { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "rbar" "split"; }
+.step-review.editing .workspace { grid-template-columns: 300px minmax(0, 1fr); grid-template-areas: "rbar rbar" "tools split"; }
+.step-review #reviewBar { display: flex; grid-area: rbar; }
+.step-review #splitArea { display: flex; grid-area: split; }
+.step-review.editing #editTools { display: block; grid-area: tools; animation: rise 220ms ease; }
+.step-simulate #simBar { display: flex; grid-area: sbar; }
+.step-simulate.sim-scenario .workspace { grid-template-columns: 236px minmax(0, 1fr) 300px; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "sbar sbar sbar" "palette canvas check"; }
+.step-simulate.sim-scenario #palette, .step-simulate.sim-scenario #scnCanvas, .step-simulate.sim-scenario #checkPanel { display: block; animation: rise 220ms ease; }
+.step-simulate.sim-results .workspace { grid-template-columns: minmax(0, 1fr) 370px; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "sbar sbar" "split panel" "transport panel"; }
+.step-simulate.sim-results #splitArea { display: flex; grid-area: split; }
+.step-simulate.sim-results #simPanel { display: block; grid-area: panel; animation: rise 220ms ease; }
+.step-simulate.sim-results #transport { display: grid; grid-area: transport; }
+.step-simulate.sim-history .workspace { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "sbar" "history"; }
+.step-simulate.sim-history #historyView { display: block; grid-area: history; animation: rise 220ms ease; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; box-shadow: var(--shadow); }
+
+/* Import */
+.page { max-width: 1080px; margin: 0 auto; padding: 18px 4px 28px; }
+.page h2 { font-size: 24px; }
+.lede { color: var(--ink-2); margin: 6px 0 18px; max-width: 70ch; }
+.sources { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
+.source { padding: 16px 18px; }
+.source h3 { font-size: 16px; margin-bottom: 4px; }
+.source p { margin: 0 0 12px; color: var(--ink-2); }
+.inbox { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 11px; background: var(--accent-soft); margin-bottom: 12px; }
+.inbox .file { flex: 1; min-width: 0; }
+.inbox b { display: block; }
+.inbox small { color: var(--ink-2); }
+.filedrop { display: block; padding: 14px; border: 1.5px dashed var(--rule-2); border-radius: 11px; text-align: center; cursor: pointer; color: var(--ink-2); }
+.filedrop input { display: block; margin: 8px auto 0; font-size: 12.5px; }
+.samples { margin-top: 14px; padding: 16px 18px; }
+.sample-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+.sample { text-align: left; padding: 10px; border-radius: 12px; border: 1px solid var(--rule); background: var(--card); cursor: pointer; display: grid; gap: 6px; }
+.sample:hover { border-color: var(--accent); }
+.sample .thumb svg { width: 100%; height: auto; display: block; border-radius: 6px; }
+.sample b { font-size: 14px; }
+.sample small { color: var(--ink-2); font-size: 12.5px; }
+.summary { margin-top: 14px; padding: 16px 18px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 18px; align-items: start; }
+.summary .thumb svg { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--rule); }
+.read { list-style: none; margin: 10px 0 14px; padding: 0; display: grid; gap: 7px; }
+.read li { display: grid; grid-template-columns: 20px 96px 1fr; gap: 8px; align-items: start; font-size: 13.5px; }
+.read .ok { color: var(--pass); width: 18px; height: 18px; }
+.read span:last-child { color: var(--ink-2); }
+
+/* Review bar */
+.reviewbar { align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--rule); }
+.rb-text { display: grid; gap: 1px; min-width: 0; }
+.rb-text b { font-size: 14px; }
+.rb-actions { display: flex; gap: 8px; flex: none; }
+.app.editing #editToggle { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+/* Review stage: the 3D view fills it; the floor plan is a collapsible glass panel inside it */
+.stage { position: relative; min-width: 0; min-height: 0; }
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; flex: 1 1 auto; }
+.iconbtn.sm { width: 28px; height: 28px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink-2); }
+.iconbtn.sm:hover { border-color: var(--rule-2); color: var(--ink); }
+.iconbtn.sm svg { width: 16px; height: 16px; }
+.liquid {
+  --spring: cubic-bezier(.3, 1.3, .5, 1);
+  background: var(--glass);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.22) 55%, rgba(255, 255, 255, 0.38)), color-mix(in srgb, var(--panel) 58%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.7); backdrop-filter: blur(20px) saturate(1.7);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 32px rgba(20, 30, 40, 0.18), 0 2px 6px rgba(20, 30, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .liquid { background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0.08)), color-mix(in srgb, var(--panel) 70%, transparent); border-color: rgba(255, 255, 255, 0.16); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18); } }
+:root[data-theme="dark"] .liquid { background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0.08)), color-mix(in srgb, var(--panel) 70%, transparent); border-color: rgba(255, 255, 255, 0.16); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.plandock { position: absolute; z-index: 4; width: 190px; height: 50px; border-radius: 25px; overflow: hidden; touch-action: none;
+  transition: width 560ms var(--spring), height 560ms var(--spring), border-radius 560ms var(--spring), box-shadow 300ms ease; }
+.plandock[data-open="true"] { width: var(--pd-w, 440px); height: var(--pd-h, 300px); border-radius: 20px; }
+.plandock[data-corner="br"] { right: 12px; bottom: 12px; }
+.plandock[data-corner="bl"] { left: 12px; bottom: 12px; }
+.plandock[data-corner="tr"] { right: 56px; top: 12px; }
+.plandock[data-corner="tl"] { left: 12px; top: 58px; }
+.plandock.dragging { transition: none; cursor: grabbing; box-shadow: 0 18px 44px rgba(20, 30, 40, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.85); }
+.pd-pill { position: absolute; inset: 0; display: flex; align-items: center; gap: 9px; padding: 0 14px 0 7px; border: 0; background: transparent; cursor: pointer; text-align: left; transition: opacity 220ms ease; }
+.pd-pill .pd-label { font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+.pd-pill svg.chev { width: 16px; height: 16px; color: var(--ink-2); margin-left: auto; flex: none; }
+.pd-thumb { width: 66px; height: 34px; border-radius: 17px; overflow: hidden; background: #fff; flex: none; box-shadow: inset 0 0 0 1px rgba(31, 43, 54, 0.1); }
+.pd-thumb svg { width: 100%; height: 100%; display: block; }
+.pd-panel { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+.plandock[data-open="true"] .pd-pill { opacity: 0; pointer-events: none; }
+.plandock[data-open="true"] .pd-panel { opacity: 1; pointer-events: auto; transition: opacity 280ms ease 160ms; }
+.pd-head { flex: none; display: flex; align-items: center; gap: 6px; padding: 7px 8px 5px 6px; cursor: grab; user-select: none; }
+.pd-head b { font-size: 14px; flex: none; }
+.pd-head .hint { flex: 1; min-width: 0; font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grip { width: 24px; height: 24px; display: grid; place-items: center; color: var(--ink-2); border-radius: 7px; flex: none; }
+.grip svg { width: 14px; height: 14px; }
+.plandock .plan2d { flex: 1; min-height: 0; margin: 0 8px; border-radius: 13px; overflow: hidden; background: #fff; padding: 4px; box-shadow: inset 0 0 0 1px rgba(31, 43, 54, 0.08); }
+.pd-routes { flex: none; padding: 7px 12px 10px; }
+.pd-resize { position: absolute; width: 20px; height: 20px; z-index: 2; touch-action: none; }
+.pd-resize::before { content: ""; position: absolute; inset: 5px; border-radius: 2px; background: linear-gradient(135deg, transparent 45%, var(--ink-2) 45%, var(--ink-2) 55%, transparent 55%, transparent 70%, var(--ink-2) 70%, var(--ink-2) 80%, transparent 80%); opacity: 0.55; }
+.plandock[data-corner="br"] .pd-resize { left: 2px; top: 2px; cursor: nwse-resize; transform: rotate(180deg); }
+.plandock[data-corner="bl"] .pd-resize { right: 2px; top: 2px; cursor: nesw-resize; transform: rotate(270deg); }
+.plandock[data-corner="tr"] .pd-resize { left: 2px; bottom: 2px; cursor: nesw-resize; transform: rotate(90deg); }
+.plandock[data-corner="tl"] .pd-resize { right: 2px; bottom: 2px; cursor: nwse-resize; }
+.plandock[data-open="false"] .pd-resize { display: none; }
+.roomcard { left: 12px; bottom: 12px; width: min(340px, calc(100% - 24px)); padding: 12px 14px 12px; border-radius: 18px; animation: rise 240ms ease; }
+.roomcard .rc-close { position: absolute; top: 8px; right: 8px; }
+.roomcard h3 { font-size: 16px; padding-right: 30px; }
+.roomcard p { margin: 3px 0 0; font-size: 13.5px; }
+#view3dBody.dock-bl .roomcard, #view3dBody.dock-bl .caption { left: auto; right: 12px; }
+#view3dBody.dock-tl .viewhint { display: none; }
+.plan2d svg { width: 100%; height: 100%; display: block; }
+.plansvg .room { cursor: pointer; transition: fill-opacity 120ms; }
+.plansvg .room:hover { stroke: #2453d6; stroke-width: 7; }
+.routes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; }
+.routes label { display: flex; gap: 7px; align-items: flex-start; cursor: pointer; }
+.routes small { display: block; color: var(--ink-2); font-size: 12px; }
+.sw { width: 14px; height: 4px; border-radius: 2px; margin-top: 8px; flex: none; }
+input[type="checkbox"] { accent-color: var(--accent); margin: 3px 0 0; width: 15px; height: 15px; flex: none; }
+#roomInfo h3 { font-size: 15px; }
+#roomInfo p { margin: 3px 0 0; }
+.facts { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; }
+.now { color: var(--accent); font-weight: 700; font-size: 13.5px; }
+.foot-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+/* 3D pane and overlays */
+.pane-body { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--horizon); }
+#view { position: absolute; inset: 0; }
+#view canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#view canvas:active { cursor: grabbing; }
+.ov { position: absolute; z-index: 3; }
+.glassbox { background: var(--glass); border: 1px solid var(--rule); box-shadow: var(--shadow); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; }
+.seg button { border: 0; background: transparent; padding: 5px 11px; border-radius: 7px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+.seg button:hover { background: var(--accent-soft); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.viewbar { top: 10px; left: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; max-width: calc(100% - 120px); }
+.viewhint { top: 54px; left: 12px; font-size: 12px; color: var(--ink-2); text-shadow: 0 0 6px var(--horizon); max-width: 60%; }
+.zoom { right: 10px; top: 10px; display: grid; gap: 6px; }
+.iconbtn { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; cursor: pointer; padding: 0; }
+.iconbtn svg { width: 17px; height: 17px; }
+.tourbar { left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 14px; }
+.tourbar .count { font-size: 13px; color: var(--ink-2); padding: 0 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.round { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.round svg { width: 18px; height: 18px; }
+.caption { left: 12px; bottom: 66px; width: min(380px, calc(100% - 24px)); padding: 12px 14px 12px; border-radius: 14px; animation: rise 260ms ease; }
+.caption h3 { font-size: 17px; }
+.caption p { margin: 3px 0 0; font-size: 13.5px; }
+.tooltip { left: 0; top: 0; pointer-events: none; display: grid; gap: 2px; padding: 8px 11px; border-radius: 11px; font-size: 13.5px; max-width: 260px; z-index: 6; }
+.tooltip span { color: var(--ink-2); font-size: 12.5px; }
+.tooltip .tip-hint { font-style: normal; font-weight: 700; color: var(--accent); font-size: 12.5px; margin-top: 2px; }
+.followchip, .placehint { left: 50%; top: 52px; transform: translateX(-50%); padding: 7px 14px; border-radius: 999px; font-size: 13.5px; white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
+.pad { left: 12px; bottom: 12px; display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(2, 44px); gap: 6px; }
+.pad button { border-radius: 10px; font-size: 12.5px; touch-action: none; }
+.notice { left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(420px, 86%); padding: 16px 18px; border-radius: 14px; }
+
+/* Edit tools */
+#editTools { overflow-y: auto; padding: 4px 16px 16px; }
+.tools section { padding: 12px 0 14px; border-bottom: 1px solid var(--rule); }
+.tools section:last-child { border-bottom: 0; }
+.tools h2 { font-size: 14.5px; margin-bottom: 8px; }
+.seg.soft { background: var(--bg); border: 1px solid var(--rule); }
+.seg.full { display: flex; }
+.seg.full button { flex: 1; padding: 6px 4px; }
+.tool p { margin: 8px 0 0; font-size: 13.5px; }
+.tool .status { font-weight: 700; }
+.selchip { display: inline-flex; align-items: center; gap: 7px; padding: 3px 11px 3px 3px; margin: 3px 6px 3px 0; border-radius: 999px; border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); font-weight: 700; font-size: 13.5px; }
+.selchip b { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--c); color: #fff; font-size: 12.5px; }
+.selnext { display: block; font-weight: 400; margin-top: 4px; }
+.tool .warn { color: var(--fail); }
+.tool .preview { margin-top: 10px; font-weight: 700; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.textfield { width: 100%; background: var(--field); border: 1px solid var(--rule-2); border-radius: 9px; padding: 7px 9px; font-size: 13.5px; }
+.palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.palette button { display: grid; justify-items: center; gap: 3px; padding: 8px 4px 7px; border-radius: 10px; cursor: pointer; font-size: 12.5px; background: var(--card); border: 1px solid var(--rule); }
+.palette button svg { width: 24px; height: 24px; color: var(--ink-2); }
+.palette button:hover { border-color: var(--accent); }
+.palette button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.seltools { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--accent-soft); font-size: 13.5px; }
+.seltools b { flex: 1; }
+.versions { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.versions li { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 10px; border: 1px solid var(--rule); font-size: 13px; }
+.versions li.current { border-color: var(--accent); background: var(--accent-soft); }
+.versions .vn { font-weight: 700; font-variant-numeric: tabular-nums; }
+.versions small { display: block; color: var(--ink-2); font-size: 11.5px; }
+.tag { font-size: 11.5px; color: var(--accent); font-weight: 700; }
+
+/* Simulate panel and transport */
+#simPanel { overflow-y: auto; padding: 4px 16px 16px; }
+.field { display: grid; gap: 5px; font-size: 13px; color: var(--ink-2); }
+select { width: 100%; background: var(--field); border: 1px solid var(--rule-2); border-radius: 9px; padding: 7px 9px; font-size: 13.5px; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
+.kpi { display: grid; gap: 1px; padding: 9px 10px; border-radius: 11px; background: var(--card); border: 1px solid var(--rule); }
+.kpi-label { font-size: 12px; color: var(--ink-2); }
+.kpi-value { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.caption-line { font-size: 12.5px; color: var(--ink-2); margin: 8px 0 0; }
+.checks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 7px; }
+.checks li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; font-size: 13px; }
+.checks .ic { width: 19px; height: 19px; margin-top: 1px; }
+.checks .pass .ic { color: var(--pass); }
+.checks .fail .ic { color: var(--fail); }
+.checks small { display: block; color: var(--ink-2); }
+.checks em { display: block; font-style: normal; font-size: 11.5px; color: var(--ink-2); opacity: 0.85; }
+.showrow { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; margin-top: 6px; }
+.showrow label { display: flex; gap: 7px; align-items: flex-start; cursor: pointer; }
+.transport { grid-template-columns: auto auto auto minmax(140px, 1fr) auto; align-items: center; gap: 12px; padding: 9px 14px; border-radius: 14px; }
+.play { width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.play svg { width: 19px; height: 19px; }
+.clockwrap { display: grid; min-width: 100px; }
+.clock { font-size: 21px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.live { display: flex; gap: 10px; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.live b { color: var(--ink); font-variant-numeric: tabular-nums; }
+#tl { display: block; width: 100%; height: 34px; cursor: pointer; }
+.ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-2); margin-top: 1px; }
+.speed label { display: block; font-size: 11px; color: var(--ink-2); margin-bottom: 2px; text-align: center; }
+
+/* Export */
+.export-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 14px; align-items: start; }
+.final { padding: 16px 18px; }
+.final h3 { font-size: 20px; }
+.final .ver { color: var(--ink-2); margin: 2px 0 12px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 0 0 14px; }
+.stats dt { font-size: 12px; color: var(--ink-2); }
+.stats dd { margin: 0; font-weight: 700; }
+.final .thumb svg { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--rule); }
+.outs { display: grid; gap: 10px; }
+.out { padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: start; }
+.out h3 { font-size: 15px; }
+.out p { margin: 2px 0 0; color: var(--ink-2); font-size: 13.5px; grid-column: 1; }
+.out ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); grid-column: 1; }
+.out .btn { grid-column: 2; grid-row: 1; }
+.out.planned { opacity: 0.75; }
+.status { font-size: 13.5px; min-height: 1.3em; margin: 2px 0 0; }
+
+/* Assistant drawer */
+.drawer { position: absolute; z-index: 8; top: 62px; right: 12px; bottom: 12px; width: 380px; display: flex; flex-direction: column; border-radius: 16px; background: var(--panel); border: 1px solid var(--rule); box-shadow: 0 12px 40px rgba(20, 30, 40, 0.18); animation: slide 220ms ease; }
+@keyframes slide { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+.drawer header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--rule); }
+.drawer header h2 { font-size: 15px; }
+.chatlog { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 88%; padding: 8px 11px; border-radius: 12px; font-size: 13.5px; white-space: pre-wrap; }
+.msg.me { align-self: flex-end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; }
+.msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--rule); border-bottom-left-radius: 4px; }
+.msg.note { align-self: flex-start; font-size: 12px; color: var(--ink-2); padding: 2px 4px; }
+.msg.note::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--staff); margin-right: 6px; vertical-align: 1px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 14px 8px; }
+.chip { border: 1px solid var(--rule-2); background: var(--card); border-radius: 999px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; text-align: left; }
+.chip:hover { border-color: var(--accent); }
+.chatform { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 14px 6px; border-top: 1px solid var(--rule); }
+.chatform textarea { resize: none; height: 58px; background: var(--field); border: 1px solid var(--rule-2); border-radius: 10px; padding: 8px 10px; font-size: 13.5px; }
+.chatform .btns { display: grid; gap: 6px; align-content: end; }
+.chatmode { font-size: 11.5px; color: var(--ink-2); padding: 0 14px 12px; margin: 0; }
+
+/* Toast and compare dialog */
+.toast { position: absolute; z-index: 9; left: 50%; top: 72px; transform: translateX(-50%); padding: 9px 14px; border-radius: 12px; font-size: 13.5px; max-width: min(560px, calc(100% - 32px)); }
+.modal { position: absolute; z-index: 10; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(820px, calc(100% - 32px)); max-height: calc(100% - 100px); overflow: auto; border-radius: 18px; padding: 16px 18px 18px; }
+.modal header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.modal h2 { font-size: 18px; }
+.headline { font-size: 15px; margin: 8px 0 2px; }
+.tablewrap { overflow-x: auto; margin-top: 10px; }
+table.cmp { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+table.cmp th, table.cmp td { padding: 7px 9px; border-bottom: 1px solid var(--rule); text-align: right; vertical-align: top; font-variant-numeric: tabular-nums; }
+table.cmp th:first-child { text-align: left; color: var(--ink-2); font-weight: 400; }
+table.cmp thead th { color: var(--ink); font-weight: 700; }
+table.cmp thead small { display: block; font-weight: 400; color: var(--accent); font-size: 11.5px; }
+table.cmp .num { display: block; }
+table.cmp .bar { display: block; height: 4px; margin-top: 5px; border-radius: 2px; background: var(--rule); }
+table.cmp .bar i { display: block; height: 100%; border-radius: 2px; background: var(--ink-2); opacity: 0.5; }
+table.cmp td.best .num { font-weight: 700; color: var(--staff); }
+table.cmp td.best .bar i { background: var(--staff); opacity: 1; }
+
+@media (max-width: 560px) { .assistant-btn .lbl { display: none; } }
+@media (max-width: 980px) {
+  .topbar { grid-template-columns: 1fr auto; }
+  #rendererBadge { display: none; }
+  #view3d .zoom, #view3d .viewhint { display: none; }
+  .viewbar { max-width: calc(100% - 20px); flex-wrap: nowrap; overflow-x: auto; }
+  .caption { bottom: 62px; }
+  .stepper { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; justify-self: stretch; }
+  .app.chat-open .workspace { padding-right: 16px; }
+  .drawer { left: 8px; right: 8px; width: auto; top: 104px; }
+  .step-review.editing .workspace { grid-template-columns: 1fr; grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "rbar" "tools" "split"; }
+  .rb-text .small { display: none; }
+  #editTools { max-height: 40vh; }
+  .step-simulate.sim-scenario .workspace { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; grid-template-areas: "sbar" "check" "canvas" "palette"; overflow-y: auto; }
+  .step-simulate.sim-results .workspace { grid-template-columns: 1fr; grid-template-rows: auto minmax(280px, 1fr) auto auto; grid-template-areas: "sbar" "split" "transport" "panel"; overflow-y: auto; }
+  #scnCanvas, #palette, #checkPanel { overflow: visible !important; max-height: none !important; }
+  .simbar { flex-wrap: wrap; }
+  .sb-actions .filebtn, #scnDownload { display: none; }
+  #simPanel { max-height: none; }
+  .sources, .summary, .export-grid { grid-template-columns: 1fr; }
+  .sample-row { grid-template-columns: 1fr; }
+  .transport { grid-template-columns: auto auto minmax(0, 1fr); }
+  .transport .restart, .transport .speed { display: none; }
+}
+
+/* ---------- Simulate ---------- */
+.simbar { align-items: center; gap: 14px; padding: 8px 12px; border-radius: 12px; }
+.simtabs button { padding: 6px 14px; }
+.simtabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.simtabs .count:not(:empty) { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; font-size: 11px; font-weight: 700; background: var(--accent-soft); color: var(--accent); }
+.simtabs button[aria-selected="true"] .count { background: rgba(255, 255, 255, 0.25); color: inherit; }
+.scnname { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px; }
+.scnname span { font-size: 12px; color: var(--ink-2); }
+.scnname input { flex: 1; min-width: 0; max-width: 360px; font-weight: 700; font-size: 15px; border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 5px 8px; }
+.scnname input:hover, .scnname input:focus { border-color: var(--rule-2); background: var(--field); }
+.sb-actions { display: flex; gap: 8px; align-items: center; flex: none; }
+.filebtn { position: relative; overflow: hidden; display: inline-flex; align-items: center; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.bpalette { overflow-y: auto; padding: 12px 12px 16px; }
+.bpalette h2 { font-size: 15px; }
+.bpalette > p { margin: 2px 0 8px; }
+.bpalette section { margin-top: 10px; }
+.bpalette h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); margin-bottom: 5px; }
+.pchip, .bcard .grip, .tl-bar { -webkit-user-drag: none; }
+.pchip { display: flex; align-items: flex-start; gap: 9px; width: 100%; text-align: left; padding: 7px 8px; margin-bottom: 4px; border: 1px solid var(--rule); border-radius: 10px; background: var(--card); cursor: grab; touch-action: none; user-select: none; }
+.pchip:hover { border-color: var(--accent); }
+.pchip:active { cursor: grabbing; }
+.pi { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
+.pi svg { width: 17px; height: 17px; }
+.pt b { display: block; font-size: 13px; }
+.pt small { display: block; font-size: 11.5px; color: var(--ink-2); line-height: 1.3; }
+.canvas { overflow-y: auto; padding: 0 14px 18px; position: relative; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 12px 0 8px; }
+.preset { border: 1px solid var(--rule-2); background: var(--card); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.preset:hover { border-color: var(--accent); }
+.preset.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.preset em { font-style: normal; font-size: 11px; font-weight: 400; opacity: 0.85; padding: 1px 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.22); }
+.daywrap { position: sticky; top: 0; z-index: 3; background: var(--panel); padding: 6px 0 10px; border-bottom: 1px solid var(--rule); margin-bottom: 6px; }
+.daytl { display: grid; gap: 4px; }
+.tl-axis, .tl-lane { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.tl-name { font-size: 11.5px; color: var(--ink-2); align-self: center; }
+.tl-ticks { position: relative; height: 16px; }
+.tl-ticks span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--ink-2); white-space: nowrap; }
+.tl-ticks span:first-child { transform: none; }
+.tl-ticks span:last-child { transform: translateX(-100%); }
+.tl-track { position: relative; height: calc(var(--rows) * 26px + 4px); border-radius: 8px; background: repeating-linear-gradient(90deg, var(--rule) 0 1px, transparent 1px 10%), var(--bg); }
+.tl-empty { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11.5px; color: var(--ink-2); opacity: 0.8; }
+.tl-bar { position: absolute; top: calc(var(--row) * 26px + 3px); height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--c) 22%, var(--card)); border: 1.5px solid var(--c); display: flex; align-items: center; cursor: grab; touch-action: none; user-select: none; min-width: 10px; overflow: hidden; }
+.tl-bar.soft { border-style: dashed; background: color-mix(in srgb, var(--c) 12%, var(--card)); }
+.tl-bar .lbl { flex: 1; min-width: 0; padding: 0 6px; font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.tl-bar .h { width: 8px; align-self: stretch; cursor: ew-resize; flex: none; }
+.tl-bar .h:hover { background: color-mix(in srgb, var(--c) 40%, transparent); }
+.tl-bar.dragging { cursor: grabbing; box-shadow: 0 4px 14px rgba(20, 30, 40, 0.2); z-index: 2; }
+.tl-bar.point { width: auto; border: 0; background: transparent; overflow: visible; transform: translateX(-9px); }
+.tl-bar.point .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--c); border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--c); flex: none; }
+.tl-bar.point .lbl { padding-left: 5px; }
+.tl-fire { position: absolute; bottom: 1px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 9px solid var(--warn); transform: translateX(-6px); pointer-events: auto; }
+.tltip { position: absolute; z-index: 5; transform: translateX(-50%); padding: 3px 9px; border-radius: 7px; background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.bsec { margin-top: 14px; }
+.bsec > header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.bsec h3 { font-size: 14px; }
+.bsec header small { color: var(--ink-2); font-size: 12px; }
+.bsec .cnt { margin-left: auto; font-size: 11.5px; color: var(--ink-2); }
+.bcards { display: grid; gap: 8px; border-radius: 12px; transition: background 150ms, box-shadow 150ms; }
+.dragging-block .bsec.drop-ok .bcards { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); padding: 6px; }
+.dropslot { border: 1.5px dashed var(--rule-2); border-radius: 10px; padding: 10px; font-size: 12.5px; color: var(--ink-2); text-align: center; }
+.dropslot.subtle { display: none; }
+.dragging-block .drop-ok .dropslot.subtle { display: block; }
+.insline { height: 3px; border-radius: 2px; background: var(--accent); margin: -2px 0; }
+.dragghost { position: fixed; z-index: 50; pointer-events: none; display: flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 10px; background: var(--c, var(--accent)); color: #fff; font-size: 13px; font-weight: 700; box-shadow: 0 10px 28px rgba(20, 30, 40, 0.25); transform: translate(12px, 10px); }
+.dragghost svg { width: 16px; height: 16px; }
+.dragging-block, .dragging-block * { cursor: grabbing !important; user-select: none; }
+.bcard { border: 1px solid var(--rule); border-left: 4px solid var(--c); border-radius: 12px; background: var(--card); transition: opacity 150ms, box-shadow 150ms; }
+.bcard > header { display: flex; align-items: center; gap: 8px; padding: 7px 8px 7px 6px; }
+.bcard .grip { width: 22px; height: 26px; display: grid; place-items: center; color: var(--ink-2); cursor: grab; touch-action: none; border-radius: 6px; flex: none; }
+.bcard .grip:hover { background: var(--accent-soft); color: var(--accent); }
+.bcard .grip svg { width: 13px; height: 13px; }
+.bcard .grip.ghost { cursor: default; }
+.bcard .bi { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); flex: none; }
+.bcard .bi svg { width: 16px; height: 16px; }
+.bt { flex: 1; min-width: 0; display: grid; }
+.bt b { font-size: 13.5px; }
+.bsum { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bacts { display: flex; gap: 2px; align-items: center; flex: none; }
+.bcard .fold svg { transition: transform 160ms; }
+.bcard.folded .fold svg { transform: rotate(-90deg); }
+.bfields { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; padding: 2px 12px 12px 40px; }
+.bcard.folded .bfields, .bcard.folded .berr { display: none; }
+.bcard.off { opacity: 0.55; }
+.bcard.off .bfields { pointer-events: none; }
+.bcard.lifted { opacity: 0.35; }
+.bcard.flash { animation: flash 900ms ease; }
+@keyframes flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--accent); } }
+.bcard.has-error { border-color: color-mix(in srgb, var(--fail) 60%, var(--rule)); }
+.frow { display: grid; gap: 3px; align-content: start; }
+.frow.is-hidden { display: none; }
+.frow label { font-size: 12px; color: var(--ink-2); }
+.frow small { font-size: 11px; color: var(--ink-2); }
+.frow input[type="number"], .frow input[type="time"], .frow input[type="text"], .frow select { width: 100%; background: var(--field); border: 1px solid var(--rule-2); border-radius: 8px; padding: 6px 8px; font-size: 13.5px; min-height: 34px; }
+.frow.bad input, .frow.bad select { border-color: var(--fail); box-shadow: 0 0 0 2px color-mix(in srgb, var(--fail) 18%, transparent); }
+.inwrap { position: relative; display: block; }
+.inwrap i { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--ink-2); pointer-events: none; }
+.inwrap input { padding-right: 24px !important; }
+.rangein { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; font-size: 12px; color: var(--ink-2); }
+.frow.t-text { grid-column: span 2; }
+.berr { padding: 0 12px 10px 40px; }
+.berr p { margin: 2px 0; font-size: 12.5px; }
+.berr .error { color: var(--fail); }
+.berr .warning { color: color-mix(in srgb, var(--warn) 75%, var(--ink)); }
+.switch { position: relative; display: inline-block; width: 36px; height: 21px; flex: none; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.switch span { position: absolute; inset: 0; border-radius: 11px; background: var(--rule-2); transition: background 150ms; }
+.switch span::after { content: ""; position: absolute; left: 2px; top: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); transition: transform 150ms; }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::after { transform: translateX(15px); }
+.switch input:focus-visible + span { outline: 2.5px solid var(--focus); outline-offset: 2px; }
+.switch.sm { width: 32px; height: 19px; }
+.switch.sm span::after { width: 15px; height: 15px; }
+.switch.sm input:checked + span::after { transform: translateX(13px); }
+.checkpanel { overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.chkstatus { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; font-size: 13px; }
+.chkstatus b { display: block; font-size: 14.5px; }
+.chkstatus .ic { width: 22px; height: 22px; flex: none; }
+.chkstatus.ok { background: color-mix(in srgb, var(--pass) 12%, transparent); color: var(--ink); }
+.chkstatus.ok .ic { color: var(--pass); }
+.chkstatus.warn { background: color-mix(in srgb, var(--warn) 15%, transparent); }
+.chkstatus.warn .ic { color: var(--pass); }
+.chkstatus.bad { background: color-mix(in srgb, var(--fail) 12%, transparent); }
+.chkstatus.bad .ic { color: var(--fail); }
+.chklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.chklist button { display: flex; gap: 8px; width: 100%; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 6px; font-size: 12.5px; cursor: pointer; }
+.chklist button:hover { background: var(--accent-soft); }
+.chklist .ic { width: 17px; height: 17px; flex: none; margin-top: 1px; }
+.chklist .error .ic { color: var(--fail); }
+.chklist .warning .ic { color: var(--warn); }
+.btn.big { padding: 11px 14px; font-size: 15px; border-radius: 11px; }
+.progress span { font-size: 12.5px; color: var(--ink-2); }
+.pbar { height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; margin-top: 4px; }
+.pbar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 120ms; }
+.sweep { border-top: 1px solid var(--rule); padding-top: 10px; }
+.sweep summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
+.sweep .field { margin-top: 8px; }
+.sweep .btn { margin-top: 8px; }
+#simPanel { overflow-y: auto; padding: 4px 16px 16px; }
+.rmeta { margin: 12px 0 8px; font-weight: 700; font-size: 15px; display: grid; }
+.rmeta span { font-weight: 400; font-size: 12.5px; color: var(--ink-2); }
+.verdict { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--rule); }
+.verdict .vt { font-size: 19px; font-weight: 700; }
+.verdict p { margin: 4px 0 0; font-size: 13.5px; }
+.verdict.good { background: color-mix(in srgb, var(--pass) 12%, transparent); border-color: color-mix(in srgb, var(--pass) 40%, transparent); }
+.verdict.good .vt { color: var(--pass); }
+.verdict.busy { background: color-mix(in srgb, var(--warn) 14%, transparent); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.verdict.busy .vt { color: color-mix(in srgb, var(--warn) 70%, var(--ink)); }
+.verdict.bad { background: color-mix(in srgb, var(--fail) 11%, transparent); border-color: color-mix(in srgb, var(--fail) 40%, transparent); }
+.verdict.bad .vt { color: var(--fail); }
+.rsec { margin-top: 14px; }
+.rsec h3 { font-size: 14px; margin-bottom: 4px; }
+.rsec p { margin: 2px 0 0; }
+.ubars { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.ubars li { display: grid; grid-template-columns: 96px 1fr 40px; gap: 8px; align-items: center; font-size: 12.5px; }
+.ubars b { text-align: right; font-variant-numeric: tabular-nums; }
+.ub { height: 8px; border-radius: 4px; background: var(--rule); overflow: hidden; }
+.ub i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+.ubars li:first-child .ub i { background: var(--warn); }
+.rgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 6px; }
+.rgrid div { padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--rule); display: grid; }
+.rgrid span { font-size: 11.5px; color: var(--ink-2); }
+.rgrid b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.rgrid small { display: block; font-weight: 400; font-size: 11px; color: var(--ink-2); }
+.rules { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
+.rules li { margin: 3px 0; }
+.empty { padding: 26px 10px; text-align: center; color: var(--ink-2); }
+.empty h3 { color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.playback { border-top: 1px solid var(--rule); padding-top: 12px; }
+.planchecks summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
+.vpill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.vpill.good { background: color-mix(in srgb, var(--pass) 15%, transparent); color: var(--pass); }
+.vpill.busy { background: color-mix(in srgb, var(--warn) 18%, transparent); color: color-mix(in srgb, var(--warn) 70%, var(--ink)); }
+.vpill.bad { background: color-mix(in srgb, var(--fail) 13%, transparent); color: var(--fail); }
+.history { overflow-y: auto; padding: 16px 18px; }
+.history > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.history h2 { font-size: 18px; }
+.history header .row { margin-top: 0; }
+.hlist { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.hlist > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; gap: 14px; align-items: center; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--card); }
+.hlist > li.sel { border-color: var(--accent); background: var(--accent-soft); }
+.hlist > li.empty { display: block; }
+.hmain { display: grid; min-width: 0; }
+.hmain b { font-size: 14px; }
+.hmain small { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hnum { display: grid; font-size: 11.5px; color: var(--ink-2); text-align: right; }
+.hnum b { font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.hacts { display: flex; gap: 6px; align-items: center; }
+#histCompareBox h3 { margin: 18px 0 6px; font-size: 15px; }
+#histCompareBox table.cmp { table-layout: fixed; }
+#histCompareBox table.cmp th:first-child { width: 170px; }
+#histCompareBox table.cmp td, #histCompareBox table.cmp thead th { text-align: left; }
+.diff .more { color: var(--ink-2); font-style: italic; }
+.cmp small { display: block; font-weight: 400; color: var(--ink-2); font-size: 11.5px; }
+.cmp .best { color: var(--staff); font-weight: 700; }
+.diff { list-style: none; margin: 0; padding: 0; text-align: left; font-size: 12px; display: grid; gap: 2px; }
+.diff .add::before { content: "+ "; color: var(--pass); font-weight: 700; }
+.diff .rem { color: var(--ink-2); text-decoration: line-through; }
+.diff .rem::before { content: "− "; font-weight: 700; text-decoration: none; display: inline-block; }
+@media (max-width: 980px) {
+  .hlist > li { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .hlist .hnum { display: none; }
+  .hacts { grid-column: 2 / -1; }
+  .bfields { padding-left: 12px; }
+  .tl-axis, .tl-lane { grid-template-columns: 52px minmax(0, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app step-import" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>Floorplan Intelligence</h1>
+      <p><b id="planName">No plan yet</b> <span id="planVersion"></span></p>
+    </div>
+    <nav class="stepper" id="stepper" role="tablist" aria-label="Steps">
+      <span class="glider" id="glider" aria-hidden="true"></span>
+      <button type="button" role="tab" data-step="import" aria-selected="true"><span class="num">1</span>Import</button>
+      <button type="button" role="tab" data-step="review" aria-selected="false"><span class="num">2</span>Review</button>
+      <button type="button" role="tab" data-step="simulate" aria-selected="false"><span class="num">3</span>Simulate</button>
+      <button type="button" role="tab" data-step="export" aria-selected="false"><span class="num">4</span>Export</button>
+    </nav>
+    <div class="actions">
+      <span class="badge" id="rendererBadge">Starting</span>
+      <button type="button" class="btn assistant-btn" id="assistantBtn" aria-pressed="false" aria-controls="assistant">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg><span class="lbl">Assistant</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <!-- Step 1: Import -->
+    <section id="importView" aria-labelledby="importTitle">
+      <div class="page">
+        <h2 id="importTitle">Bring in a floor plan</h2>
+        <p class="lede">Plans normally arrive from the Module 1 pipeline. You can also upload a plan.json file or start from one of the sample layouts.</p>
+        <div class="sources">
+          <div class="card source">
+            <h3>From the Module 1 pipeline</h3>
+            <p>New plans from the generator show up here.</p>
+            <div class="inbox">
+              <div class="file"><b>plan_primary-care_v3.json</b><small>Primary care clinic, 18 rooms, received today at 10:42 am</small></div>
+              <button type="button" class="btn primary" id="openPipeline">Open this plan</button>
+            </div>
+            <p class="small muted">Preview: a sample file stands in for Module 1’s output.</p>
+          </div>
+          <div class="card source">
+            <h3>Upload a plan.json</h3>
+            <p>For a file you already have, such as one from your team.</p>
+            <label class="filedrop">Choose a plan.json file<input type="file" id="fileInput" accept=".json,application/json"></label>
+            <p class="small error" id="fileMsg" hidden></p>
+          </div>
+        </div>
+        <div class="card samples">
+          <h3>Or start from a sample layout</h3>
+          <div class="sample-row">
+            <button type="button" class="sample" data-sample="A"><span class="thumb" id="thumbA"></span><b>Layout A</b><small id="thumbTextA">Lobby in the middle</small></button>
+            <button type="button" class="sample" data-sample="B"><span class="thumb" id="thumbB"></span><b>Layout B</b><small id="thumbTextB">Lobby at the west end</small></button>
+            <button type="button" class="sample" data-sample="C"><span class="thumb" id="thumbC"></span><b>Layout C</b><small id="thumbTextC">Nurse station among the exam rooms</small></button>
+          </div>
+        </div>
+        <div class="card summary" id="importSummary" hidden>
+          <div class="thumb" id="importThumb"></div>
+          <div>
+            <h3 id="importName">Plan</h3>
+            <p class="muted small"><span id="importSource"></span>. <span id="importArea"></span></p>
+            <ul class="read" id="importRead"></ul>
+            <button type="button" class="btn primary" id="importNext" data-next="review" disabled>Next: Review</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Review: a bar with the optional Edit button, then two movable panes -->
+    <div class="reviewbar" id="reviewBar">
+      <div class="rb-text"><b id="rbTitle">Review the plan</b><span class="small muted" id="rbHint">Open the floor plan from the corner of the 3D view. Drag it to any corner, and drag its edge to resize it.</span></div>
+      <div class="rb-actions">
+        <button type="button" class="btn" id="editToggle" aria-pressed="false">Edit plan</button>
+        <button type="button" class="btn primary" data-next="simulate">Next: Simulate</button>
+      </div>
+    </div>
+    <!-- Optional editing (opened from Review) -->
+    <aside class="card tools" id="editTools" aria-label="Edit tools">
+      <section>
+        <h2>What do you want to change?</h2>
+        <div class="seg soft full" role="group" aria-label="Tool">
+          <button type="button" data-tool="swap" aria-pressed="true">Swap rooms</button>
+          <button type="button" data-tool="rename" aria-pressed="false">Rename</button>
+          <button type="button" data-tool="furniture" aria-pressed="false">Furniture</button>
+        </div>
+        <div class="tool" id="toolSwap">
+          <p>Click two rooms on the same side of the corridor to trade their places.</p>
+          <p class="small muted" id="swapNote" hidden>Swapping works on the sample layouts. For your own plans, ask the assistant and the change goes to Module 1.</p>
+          <p class="status" id="swapStatus"></p>
+          <div id="swapPreview"></div>
+          <div class="row"><button type="button" class="btn primary" id="swapApply" disabled>Swap them</button><button type="button" class="btn" id="swapClear">Clear</button></div>
+        </div>
+        <div class="tool" id="toolRename" hidden>
+          <p id="renameHint">Click a room on the plan to rename it.</p>
+          <div id="renameRow" hidden><input class="textfield" id="renameInput" aria-label="New room name"><div class="row"><button type="button" class="btn primary" id="renameSave">Save name</button></div></div>
+        </div>
+        <div class="tool" id="toolFurniture" hidden>
+          <p>Pick an item, then click inside a room in the 3D view. Drag to move it, R to rotate. Walking routes go around it.</p>
+          <div class="palette" role="group" aria-label="Furniture to place">
+            <button type="button" data-place="bed" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 18V8M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6"/></svg>Bed</button>
+            <button type="button" data-place="chair" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M7 4v9h10M7 13v7M17 13v7M7 9h8"/></svg>Chair</button>
+            <button type="button" data-place="desk" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 11h18M5 11v8M19 11v8M9 5h6v4H9z"/></svg>Desk</button>
+            <button type="button" data-place="plant" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 15h8l-1 5H9zM12 15V9M12 11c-3 0-5-2-5-5 3 0 5 2 5 5zM12 9c0-3 2-5 5-5 0 3-2 5-5 5z"/></svg>Plant</button>
+            <button type="button" data-place="cabinet" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="6" y="3.5" width="12" height="17" rx="1"/><path d="M12 3.5v17M10 11v2M14 11v2"/></svg>Cabinet</button>
+            <button type="button" data-place="screen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 5l5 1v13l-5-1zM9 6l6-1v13l-6 1zM15 5l5 1v13l-5-1z"/></svg>Screen</button>
+          </div>
+          <div class="seltools" id="selectionTools" hidden><b id="selectionName">Bed</b><button type="button" class="btn small" id="rotateBtn">Rotate</button><button type="button" class="btn small" id="removeBtn">Remove</button></div>
+        </div>
+      </section>
+      <section>
+        <h2>Bigger changes</h2>
+        <p class="small muted">Resizing, adding or removing rooms goes to the plan generator (Module 1).</p>
+        <div class="row"><button type="button" class="btn" id="askBigger">Ask the assistant</button></div>
+      </section>
+      <section>
+        <h2>Versions</h2>
+        <ul class="versions" id="versions"></ul>
+      </section>
+      <section>
+        <div class="row" style="margin-top: 0;"><button type="button" class="btn primary" id="doneEditing">Done editing</button></div>
+      </section>
+    </aside>
+
+
+    <div class="stage" id="splitArea">
+      <section class="pane card" id="view3d" aria-label="3D view">
+        <div class="pane-body" id="view3dBody">
+      <div id="view"></div>
+      <div class="ov viewbar">
+        <div class="seg glassbox" role="group" aria-label="Camera">
+          <button type="button" data-view="orbit" aria-pressed="true">Overview</button>
+          <button type="button" data-view="tour" aria-pressed="false">Guided tour</button>
+          <button type="button" data-view="follow" aria-pressed="false">Follow a patient</button>
+          <button type="button" data-view="walk" aria-pressed="false">Walk</button>
+        </div>
+        <div class="seg glassbox" role="group" aria-label="Wall height">
+          <button type="button" data-walls="cut" aria-pressed="true">Cut-away</button>
+          <button type="button" data-walls="full" aria-pressed="false">Full walls</button>
+        </div>
+      </div>
+      <div class="ov zoom">
+        <button type="button" class="iconbtn glassbox" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+        <button type="button" class="iconbtn glassbox" id="zoomOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+        <button type="button" class="iconbtn glassbox" id="zoomFit" aria-label="Show the whole building"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/><rect x="8.5" y="8.5" width="7" height="7" rx="1"/></svg></button>
+      </div>
+      <div class="ov caption glassbox" id="caption" hidden aria-live="polite">
+        <h3 id="capTitle">Entrance</h3>
+        <p id="capPurpose"></p>
+        <p class="now" id="capNow"></p>
+        <ul class="facts" id="capFacts"></ul>
+      </div>
+      <div class="ov tourbar glassbox" id="tourBar" hidden>
+        <button type="button" class="iconbtn" id="tourPrev" aria-label="Previous stop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button type="button" class="round" id="tourPlay" aria-label="Pause the tour"></button>
+        <button type="button" class="iconbtn" id="tourNext" aria-label="Next stop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        <span class="count" id="tourCount">Stop 1 of 1</span>
+        <button type="button" class="btn small ghost" id="tourExit">End tour</button>
+      </div>
+      <div class="ov tooltip glassbox" id="tooltip" hidden></div>
+      <div class="ov followchip glassbox" id="followChip" hidden role="status"></div>
+      <div class="ov placehint glassbox" id="placeHint" hidden role="status">Click inside a room to place it. R rotates, Esc cancels.</div>
+      <div class="ov pad" id="walkPad" hidden aria-label="Walking controls">
+        <button type="button" class="glassbox" data-pad="tl" aria-label="Turn left">Turn</button>
+        <button type="button" class="glassbox" data-pad="f" aria-label="Walk forward">Ahead</button>
+        <button type="button" class="glassbox" data-pad="tr" aria-label="Turn right">Turn</button>
+        <button type="button" class="glassbox" data-pad="l" aria-label="Step left">Left</button>
+        <button type="button" class="glassbox" data-pad="b" aria-label="Walk back">Back</button>
+        <button type="button" class="glassbox" data-pad="r" aria-label="Step right">Right</button>
+      </div>
+      <div class="ov notice glassbox" id="notice" hidden role="status"></div>
+      <p class="ov viewhint" id="viewHint">Drag to turn, scroll to zoom, right-drag to pan. Click a room for details, double-click to zoom in.</p>
+          <div class="ov roomcard liquid" id="roomCard" hidden aria-live="polite">
+            <button type="button" class="iconbtn sm rc-close" id="roomCardClose" aria-label="Close the room details"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+            <div id="roomInfo"></div>
+          </div>
+          <aside class="plandock liquid" id="planDock" data-open="false" data-corner="br" aria-label="Floor plan">
+            <button type="button" class="pd-pill" id="pdPill" aria-expanded="false" aria-controls="pdPanel"><span class="pd-thumb" id="pdThumb" aria-hidden="true"></span><span class="pd-label">Floor plan</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"/></svg></button>
+            <div class="pd-panel" id="pdPanel">
+              <div class="pd-head" id="pdHead"><span class="grip" aria-hidden="true"><svg viewBox="0 0 14 14" fill="currentColor"><circle cx="4" cy="3" r="1.3"/><circle cx="10" cy="3" r="1.3"/><circle cx="4" cy="7" r="1.3"/><circle cx="10" cy="7" r="1.3"/><circle cx="4" cy="11" r="1.3"/><circle cx="10" cy="11" r="1.3"/></svg></span><b>Floor plan</b><span class="hint" id="planHint">Click a room to fly there</span><button type="button" class="iconbtn sm" id="pdCollapse" aria-label="Collapse the floor plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button></div>
+              <div class="plan2d" id="plan2d"></div>
+              <ul class="routes pd-routes" aria-label="Routes on the plan">
+          <li><label><input type="checkbox" id="rJourney" checked><span class="sw" id="swJ"></span><span>Patient path<small id="tJourney"></small></span></label></li>
+          <li><label><input type="checkbox" id="rStaff"><span class="sw" id="swS"></span><span>Nurse walks<small id="tStaff"></small></span></label></li>
+          <li><label><input type="checkbox" id="rEgress"><span class="sw" id="swE"></span><span>Longest way out<small id="tEgress"></small></span></label></li>
+        </ul>
+              <span class="pd-resize" id="pdResize" title="Drag to resize" aria-hidden="true"></span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+
+    <!-- Simulate: build a scenario from typed blocks, run it, read the answer, and look back at earlier runs -->
+    <div class="card simbar" id="simBar">
+      <div class="seg soft simtabs" role="tablist" aria-label="Simulation">
+        <button type="button" role="tab" data-simtab="scenario" aria-selected="true">Scenario</button>
+        <button type="button" role="tab" data-simtab="results" aria-selected="false">Results</button>
+        <button type="button" role="tab" data-simtab="history" aria-selected="false">History<span class="count" id="histCount"></span></button>
+      </div>
+      <label class="scnname"><span>Scenario</span><input type="text" id="scnName" maxlength="60" aria-label="Scenario name"></label>
+      <div class="sb-actions">
+        <label class="btn small filebtn">Import .json<input type="file" id="scnImport" accept=".json,application/json"></label>
+        <button type="button" class="btn small" id="scnDownload">Download .json</button>
+        <button type="button" class="btn primary" data-next="export">Looks good: finalize</button>
+      </div>
+    </div>
+    <aside class="card bpalette" id="palette" aria-label="Blocks you can add"></aside>
+    <section class="card canvas" id="scnCanvas" aria-label="Scenario">
+      <div class="presets" id="presetRow"></div>
+      <div class="daywrap"><div class="daytl" id="dayTimeline" aria-label="The day at a glance. Drag a bar to move it, or drag its edges to change the times."></div><div class="tltip" id="tlTip" hidden></div></div>
+      <div id="scnSections"></div>
+    </section>
+    <aside class="card checkpanel" id="checkPanel" aria-label="Checks and run">
+      <div class="chkstatus" id="chkStatus" role="status"></div>
+      <ul class="chklist" id="chkList"></ul>
+      <div id="chkSummary"></div>
+      <button type="button" class="btn primary big" id="runBtn">Run 20 days</button>
+      <div class="progress" id="runProgress" hidden><span></span><div class="pbar"><i></i></div></div>
+      <details class="sweep">
+        <summary>Try a range of values</summary>
+        <p class="small muted">Runs the scenario once for each value, 10 days each, and compares them.</p>
+        <label class="field">Change<select id="swField"><option value="nurses">Nurses</option><option value="providers">Providers</option><option value="receptionists">Receptionists</option><option value="patients">Patients per day</option></select></label>
+        <label class="field">Values<input class="textfield" id="swValues" value="1, 2, 3" aria-describedby="swHelp"></label>
+        <p class="small muted" id="swHelp">Separate values with commas.</p>
+        <button type="button" class="btn" id="sweepBtn">Run the range</button>
+      </details>
+    </aside>
+    <aside class="card" id="simPanel" aria-label="Results">
+      <div id="resultsBody"></div>
+      <section class="rsec playback">
+        <h3>Watching the day</h3>
+        <p class="small muted" id="playNote"></p>
+        <p class="small" id="dayMsg"></p>
+        <div class="showrow"><label><input type="checkbox" id="lyrTraffic"> Foot traffic</label><label><input type="checkbox" id="lyrWaits" checked> Waiting-time dots</label></div>
+      </section>
+      <details class="rsec planchecks"><summary>Plan checks <span class="small muted" id="checksSummary"></span></summary><ul class="checks" id="checks"></ul><p class="small muted">Example checks until Module 2 connects with the full U.S. rule set.</p></details>
+    </aside>
+    <div class="card transport" id="transport" aria-label="Day timeline">
+      <button type="button" class="play" id="playBtn" aria-label="Play the day"></button>
+      <button type="button" class="iconbtn btn restart" id="restartBtn" aria-label="Restart the day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></button>
+      <div class="clockwrap"><span class="clock" id="clock">8:00 am</span><span class="live"><span>In clinic <b id="liveIn">0</b></span><span>Lobby <b id="liveWait">0</b></span><span>Seen <b id="liveSeen">0</b></span></span></div>
+      <div><canvas id="tl" aria-label="Day timeline. Click to jump to a time."></canvas><div class="ticks" id="tlTicks" aria-hidden="true"></div></div>
+      <div class="speed"><label id="speedLbl">Speed</label><div class="seg soft" role="group" aria-labelledby="speedLbl">
+        <button type="button" data-speed="0.0166667" aria-pressed="false" title="Real time">1×</button>
+        <button type="button" data-speed="0.1666667" aria-pressed="true" title="One minute of the day every 6 seconds">10×</button>
+        <button type="button" data-speed="1" aria-pressed="false" title="One minute of the day every second">60×</button>
+        <button type="button" data-speed="5" aria-pressed="false" title="Five minutes of the day every second">300×</button>
+      </div></div>
+    </div>
+
+    <section class="card history" id="historyView" aria-label="Earlier runs">
+      <header><div><h2>History</h2><p class="small muted">Every run is saved in this browser. Reload a scenario, run it again, or pick two to four runs to compare.</p></div><div class="row"><button type="button" class="btn primary" id="histCompare" disabled>Compare selected</button><button type="button" class="btn ghost" id="histClear">Clear history</button></div></header>
+      <ul class="hlist" id="historyList"></ul>
+      <div id="histCompareBox"></div>
+    </section>
+
+    <!-- Step 5: Export -->
+    <section id="exportView" aria-labelledby="exportTitle">
+      <div class="page">
+        <h2 id="exportTitle">Finalize and export</h2>
+        <p class="lede">This version becomes the final plan. Take it to Blender or other 3D tools, or keep the data for your team.</p>
+        <div class="export-grid">
+          <div class="card final">
+            <h3 id="exName">Plan</h3>
+            <p class="ver" id="exVersion"></p>
+            <dl class="stats" id="exStats"></dl>
+            <div class="thumb" id="exPreview"></div>
+          </div>
+          <div class="outs">
+            <div class="card out">
+              <h3>Everything, ready for Blender</h3>
+              <button type="button" class="btn primary" data-export="zip">Download .zip</button>
+              <p id="exZipName">plan.zip</p>
+              <ul>
+                <li><b>clinic.glb</b>: the 3D model, with each room as its own group</li>
+                <li><b>plan.json</b> and <b>plan.svg</b>: the plan data and the 2D drawing</li>
+                <li><b>build_in_blender.py</b>: builds a Blender file with one collection per room</li>
+                <li><b>Claude skill</b>: lets Claude Code build the Blender file or add the export to your repository</li>
+              </ul>
+              <p class="small" id="exGlbNote" hidden>The 3D model needs WebGL, which didn’t start here, so the .zip has everything except clinic.glb.</p>
+            </div>
+            <div class="card out">
+              <h3>Plan data</h3>
+              <button type="button" class="btn" data-export="json">Download .json</button>
+              <p>plan.json with your edits, added furniture and check results.</p>
+            </div>
+            <div class="card out">
+              <h3>2D drawing</h3>
+              <button type="button" class="btn" data-export="svg">Download .svg</button>
+              <p>The floor plan as a vector drawing for printing or slides.</p>
+            </div>
+            <div class="card out planned">
+              <h3>Send to a GitHub repository</h3>
+              <button type="button" class="btn" disabled>Planned</button>
+              <p>Pushes this export into a folder in your repo. Planned for the real build.</p>
+            </div>
+            <p class="small muted" id="exDlNote" hidden>Downloads aren’t available in this view. Open the artifact in Claude to save files.</p>
+            <p class="status" id="exStatus" role="status"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="drawer" id="assistant" hidden aria-label="Assistant">
+    <header><h2>Assistant</h2><button type="button" class="btn small ghost" id="chatClose">Close</button></header>
+    <div class="chatlog" id="chatLog" aria-live="polite">
+      <div class="msg bot">Ask about this plan: whether it can handle a busy day, why patients wait, or how to open the export in Blender. I can also show rooms, swap rooms, run a day and start the tour.</div>
+    </div>
+    <div class="chips" id="chatSuggest"></div>
+    <form class="chatform" id="chatForm">
+      <textarea id="chatInput" placeholder="Ask or give feedback" aria-label="Message"></textarea>
+      <div class="btns"><button type="submit" class="btn primary" id="chatSend">Send</button><button type="button" class="btn small" id="chatStop" hidden>Stop</button></div>
+    </form>
+    <p class="chatmode" id="chatMode"></p>
+  </aside>
+
+  <div class="toast glassbox" id="toast" hidden role="status"></div>
+  <section class="modal glassbox" id="comparePanel" hidden role="dialog" aria-labelledby="compareTitle">
+    <header><h2 id="compareTitle">Layouts compared on the same day</h2><button type="button" class="btn" id="closeCompare">Close</button></header>
+    <p class="headline" id="compareHeadline"></p>
+    <p class="caption-line" id="compareCaption"></p>
+    <div class="tablewrap"><table class="cmp" id="compareTable"></table></div>
+  </section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+<script>
+'use strict';
+/*__ENGINE__*/
+/*__VIEW__*/
+/*__PLAN2D__*/
+/*__EXPORT__*/
+/*__SIM__*/
+/*__UI__*/
+</script>
+</body>
+</html>

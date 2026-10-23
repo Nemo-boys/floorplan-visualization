@@ -313,10 +313,13 @@ export function initCapabilities(): void {
 export async function init(): Promise<void> {
   const want = (location.hash || '').replace('#', '');
   state.dock = loadDock() || { open: false, corner: 'br', w: 440, h: 300 };
-  await initThree();
+  // The renderer starts first, as in the reference, but it's asynchronous now (WebGPU), so the page is set up while it
+  // starts. None of the next three steps needs the 3D view.
+  const three = initThree();
   renderSampleThumbs();
   bindUI();
   initSimulate();
+  await three;
   rendererNote();
   updatePlanHeader();
   setStep('import');

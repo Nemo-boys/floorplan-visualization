@@ -22,12 +22,14 @@
     "golden:check": "node tools/make-golden.mjs --check",
     "test:visual:webgpu": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output/chrome-webgpu --chrome && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgpu tests/visual/diff/chrome-webgpu",
     "test:visual:webgl": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output/chrome-webgl --chrome --no-webgpu && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgl tests/visual/diff/chrome-webgl",
-    "test:perf": "tsx tests/perf/tour-fps.ts"
+    "test:perf": "tsx tests/perf/tour-fps.ts",
+    "perf:startup": "tsx tests/perf/startup.ts"
   },
   "dependencies": {
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",

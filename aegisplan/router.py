@@ -92,6 +92,7 @@ class GenerationRouter:
         locked_rooms: Optional[List[Dict[str, Any]]] = None,
         mode: str = "local",
         num_candidates: int = 3,
+        enable_geometric_masking: bool = False,
     ) -> List[CandidateEvaluation]:
         """Generate parallel candidates, repair with CP-SAT, and rank lexicographically."""
         raw_candidates_fml: List[str] = []
@@ -101,16 +102,87 @@ class GenerationRouter:
                 brief, boundary_w, boundary_h, locked_rooms, num_candidates
             )
         else:
-            # Try local endpoint
-            try:
-                raw_candidates_fml = await self._call_local_vllm(
-                    brief, boundary_w, boundary_h, locked_rooms, num_candidates
+            # 1. Attempt high-speed GGUF Metal quantized inference if available
+            if mode in ["local", "gguf"]:
+                try:
+                    from aegisplan.gguf_engine import is_gguf_available, get_gguf_engine
+                    if is_gguf_available():
+                        engine = get_gguf_engine()
+                        if engine:
+                            logger.info("Executing via local GGUF Metal engine (Apple Silicon accelerated)...")
+                            prompt = self._format_prompt(brief, boundary_w, boundary_h, locked_rooms, include_exemplar=False)
+                            for i in range(num_candidates):
+                                cand_temp = 0.0 if i == 0 else (0.3 + i * 0.2)
+                                cand = engine.generate_fml(
+                                    prompt=prompt,
+                                    boundary_w=boundary_w,
+                                    boundary_h=boundary_h,
+                                    enable_geometric_masking=enable_geometric_masking,
+                                    temperature=cand_temp,
+                                    max_tokens=600,
+                                )
+                                if cand and any(kw in cand for kw in ["BOUNDARY", "ROOM", "BEGIN_PLAN"]):
+                                    raw_candidates_fml.append(cand)
+                            logger.info("GGUF engine generated %d candidate(s)", len(raw_candidates_fml))
+                except Exception as e:
+                    logger.warning("GGUF inference failed or not ready (%s), checking PyTorch weights.", e)
+
+            # 2. Check if local in-process PyTorch model weights exist (merged or base+LoRA)
+            if not raw_candidates_fml and mode in ["local", "pytorch"]:
+                merged_exists = os.path.exists("checkpoints/nemotron_aegisplan_merged")
+                base_exists = (
+                    os.path.exists("checkpoints/base_nemotron/model.safetensors.index.json")
+                    and os.path.exists("checkpoints/nemotron_aegisplan_final_lora/adapter_model.safetensors")
+                    and any(f.endswith(".safetensors") for f in os.listdir("checkpoints/base_nemotron"))
                 )
-            except Exception as e:
-                logger.warning(f"Local server unavailable ({e}). Synthesizing heuristic candidates for offline development.")
-                raw_candidates_fml = self._synthesize_heuristic_candidates(
-                    brief, boundary_w, boundary_h, locked_rooms, num_candidates
-                )
+
+                if merged_exists or base_exists:
+                    try:
+                        logger.info("Attempting local in-process Nemotron PyTorch model generation...")
+                        from aegisplan.local_model import generate_local_fml
+                        prompt = self._format_prompt(brief, boundary_w, boundary_h, locked_rooms, include_exemplar=False)
+                        messages = [
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are AegisPlan, an autonomous AI architect specializing in U.S. Healthcare Outpatient Facilities.\n"
+                                    "Output ONLY valid FML-DSL code matching the exact grammar: BOUNDARY RECT 0 0 <W> <H>, ROOM, DOOR, FDOOR, END_PLAN."
+                                ),
+                            },
+                            {"role": "user", "content": prompt},
+                        ]
+                        cand = generate_local_fml(
+                            messages,
+                            max_new_tokens=120,
+                            temperature=0.0,
+                            boundary_w=boundary_w,
+                            boundary_h=boundary_h,
+                            locked_rooms=locked_rooms,
+                            enable_geometric_masking=enable_geometric_masking,
+                        )
+                        if cand and any(kw in cand for kw in ["BOUNDARY", "ROOM", "BEGIN_PLAN"]):
+                            raw_candidates_fml.append(cand)
+                            logger.info("Successfully generated floorplan candidate using local fine-tuned Nemotron PyTorch model!")
+
+                        if len(raw_candidates_fml) < num_candidates:
+                            supp = self._synthesize_heuristic_candidates(
+                                brief, boundary_w, boundary_h, locked_rooms, num_candidates - len(raw_candidates_fml)
+                            )
+                            raw_candidates_fml.extend(supp)
+                    except Exception as e:
+                        logger.warning("In-process PyTorch inference failed (%s), falling back to local vLLM / heuristic.", e)
+
+            if not raw_candidates_fml:
+                # 3. Try local vLLM / llama-server HTTP endpoint
+                try:
+                    raw_candidates_fml = await self._call_local_vllm(
+                        brief, boundary_w, boundary_h, locked_rooms, num_candidates
+                    )
+                except Exception as e:
+                    logger.warning("Local server unavailable (%s). Synthesizing heuristic candidates for offline development.", e)
+                    raw_candidates_fml = self._synthesize_heuristic_candidates(
+                        brief, boundary_w, boundary_h, locked_rooms, num_candidates
+                    )
 
         evaluations: List[CandidateEvaluation] = []
 
@@ -249,6 +321,7 @@ class GenerationRouter:
         w: int,
         h: int,
         locked_rooms: Optional[List[Dict[str, Any]]],
+        include_exemplar: bool = True,
     ) -> str:
         locked_str = ""
         if locked_rooms:
@@ -256,12 +329,12 @@ class GenerationRouter:
                 f"ROOM {lr['id']} TYPE {lr['type']} RECT {lr['x']} {lr['y']} {lr['w']} {lr['h']} LOCKED"
                 for lr in locked_rooms
             ]
-            locked_str = "\nLocked Rooms:\n" + "\n".join(locked_lines)
+            locked_str = "\nLocked Rooms:\n" + "\n".join(locked_lines) + "\n"
 
+        exemplar_str = f"\nReference Exemplar:\n{FEW_SHOT_EXEMPLAR}\n" if include_exemplar else "\n"
         return (
             f"Generate an outpatient clinic floorplan for boundary RECT 0 0 {w} {h}.\n"
-            f"Clinical Brief: {brief}\n{locked_str}\n"
-            f"Reference Exemplar:\n{FEW_SHOT_EXEMPLAR}\n"
+            f"Clinical Brief: {brief}\n{locked_str}{exemplar_str}"
             "Emit strictly valid FML-DSL:"
         )
 

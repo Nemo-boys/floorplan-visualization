@@ -38,6 +38,7 @@ class GenerateRequest(BaseModel):
     locked_rooms: Optional[List[Dict[str, Any]]] = None
     mode: str = "local"  # "local" | "cloud"
     num_candidates: int = 3
+    enable_geometric_masking: bool = False
 
 
 class RepairRequest(BaseModel):
@@ -84,6 +85,7 @@ async def generate_plans(req: GenerateRequest):
             locked_rooms=req.locked_rooms,
             mode=req.mode,
             num_candidates=req.num_candidates,
+            enable_geometric_masking=req.enable_geometric_masking,
         )
         return {
             "mode": req.mode,

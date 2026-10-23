@@ -566,6 +566,12 @@
       </div>
     </div>
     <div class="header-actions">
+      <button id="btnExportJson" class="btn btn-secondary" style="font-size: 11px; padding: 5px 12px; display: flex; align-items: center; gap: 5px;" title="Export structured plan.json">
+        <span>📄</span> Export plan.json
+      </button>
+      <button id="btnExportSvg" class="btn btn-secondary" style="font-size: 11px; padding: 5px 12px; display: flex; align-items: center; gap: 5px;" title="Export CAD SVG vector floorplan">
+        <span>📐</span> Export CAD SVG
+      </button>
       <div id="privacyBadge" class="badge-privacy">
         <span>🔒</span> 100% Local Confidential (0% Leaks)
       </div>
@@ -609,9 +615,23 @@
       <div class="input-group">
         <label for="executionMode">Execution Tier</label>
         <select id="executionMode">
-          <option value="local">Local vLLM / llama.cpp (Nemotron 3.5 Lightning / Nano 9B)</option>
+          <option value="local">Local GGUF / Metal (Nemotron Nano 9B Q4_K_M)</option>
+          <option value="pytorch">Local PyTorch CPU (Merged FP16)</option>
           <option value="cloud">Cloud-Burst (OpenRouter Pinned CoreWeave/DeepInfra)</option>
         </select>
+      </div>
+
+      <!-- Geometric Logits Masking Toggle -->
+      <div class="input-group" style="padding: 10px; background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
+          <span style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-weight: 600; color: var(--text-main); font-size: 12px; display: flex; align-items: center; gap: 5px;">
+              <span>🛡️</span> Geometric Logits Masking
+            </span>
+            <span style="font-size: 10px; color: var(--text-dim);">Custom vLLM / llama.cpp processor (boundary & overlap constraint masking)</span>
+          </span>
+          <input type="checkbox" id="geometricMaskingToggle" style="width: 18px; height: 18px; accent-color: var(--accent-cyan); cursor: pointer;">
+        </label>
       </div>
 
       <button id="btnGenerate" class="btn btn-primary">
@@ -770,6 +790,10 @@
         document.getElementById(id).addEventListener('change', render2DPlan);
       });
 
+      // Export buttons
+      document.getElementById('btnExportJson').addEventListener('click', exportPlanJson);
+      document.getElementById('btnExportSvg').addEventListener('click', exportCadSvg);
+
       // Preset selection
       document.getElementById('briefPreset').addEventListener('change', (e) => {
         const val = e.target.value;
@@ -845,6 +869,8 @@
       const w = parseInt(document.getElementById('buildingWidth').value);
       const h = parseInt(document.getElementById('buildingHeight').value);
       const mode = document.getElementById('executionMode').value;
+      const maskingToggle = document.getElementById('geometricMaskingToggle');
+      const enableGeometricMasking = maskingToggle ? maskingToggle.checked : false;
 
       document.getElementById('loadingOverlay').style.display = 'flex';
       document.getElementById('conflictAlert').style.display = 'none';
@@ -858,7 +884,8 @@
             boundary_w: w,
             boundary_h: h,
             mode,
-            num_candidates: 3
+            num_candidates: 3,
+            enable_geometric_masking: enableGeometricMasking
           })
         });
 
@@ -875,6 +902,42 @@
       } finally {
         document.getElementById('loadingOverlay').style.display = 'none';
       }
+    }
+
+    function exportPlanJson() {
+      if (!currentPlan) {
+        alert('No floorplan is currently loaded.');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentPlan, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `aegisplan_${currentPlan.plan_id || 'floorplan'}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function exportCadSvg() {
+      const svg = document.getElementById('planSvg');
+      if (!svg || !currentPlan) {
+        alert('No floorplan is currently rendered.');
+        return;
+      }
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svg);
+      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = svgUrl;
+      downloadAnchor.download = `aegisplan_${currentPlan.plan_id || 'floorplan'}.svg`;
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      URL.revokeObjectURL(svgUrl);
     }
 
     function renderCandidatesList() {

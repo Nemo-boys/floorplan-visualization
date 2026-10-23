@@ -52,8 +52,7 @@ export interface Routes {
 }
 export interface PlanTag {
   name: string;
-  v: number;
-  [k: string]: unknown;
+  version: number;
 }
 export interface SweepRow {
   value: number;
@@ -74,8 +73,28 @@ export interface Run {
   plan: PlanTag;
   sweep?: { field: string; n: number; rows: SweepRow[] };
 }
+/* What History keeps of a run (fi.simHistory.v1, contracts/storage.md). */
+export interface HistoryEntry {
+  id: string;
+  at: number;
+  kind: 'run' | 'range';
+  name: string;
+  plan: PlanTag;
+  scn: Scenario;
+  n: number;
+  verdict: { level: Verdict['level']; title: string; bottleneck: Verdict['bottleneck'] };
+  agg: Record<string, Spread>;
+  sweep: { field: string; values: number[] } | null;
+}
+export interface CompareRow {
+  name: string;
+  m: Record<string, number>;
+  info: PreparedPlan['info'];
+  current?: boolean;
+}
 export interface CompareResult {
-  [k: string]: unknown;
+  scenarioKey: string | undefined;
+  rows: CompareRow[];
 }
 
 export interface AppState {
@@ -105,7 +124,7 @@ export interface AppState {
   scn: Scenario | null;
   run: Run | null;
   running: boolean;
-  history: Run[];
+  history: HistoryEntry[];
   sweep: unknown;
   histSel: Set<string>;
   folded: Set<string>;

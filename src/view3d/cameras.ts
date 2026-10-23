@@ -2,7 +2,7 @@
 import { cellAt, cellXY, clamp, stepOK, type Agent, type Grid, type PreparedPlan, type Vec } from '../engine';
 import { state, type ViewMode } from '../state';
 import { $, isTouch, reduceMotion } from '../ui/dom';
-import { updateTransport } from '../ui/pending';
+import { updateTransport } from '../ui/transport';
 import { onViewChange } from '../ui/review';
 import { highlightRoom } from './marks';
 import { R3, r3 } from './r3';

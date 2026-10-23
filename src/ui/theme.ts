@@ -4,7 +4,7 @@ import type * as THREE from 'three';
 import { R3 } from '../view3d/r3';
 import { gradientTex, texFrom } from '../view3d/textures';
 import { $ } from './dom';
-import { drawTimeline } from './pending';
+import { drawTimeline } from './transport';
 
 export function css(n: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(n).trim();

@@ -16,14 +16,14 @@ import { $, reduceMotion } from './dom';
 import { applyRename, applySwap, enterEdit, exitEdit, renderEditTools, renderPlanHint, syncEditMarks } from './edit';
 import { renderSampleThumbs, updatePlanHeader } from './import';
 import { ROLE_DOTS } from './icons';
-import { drawTimeline, renderExport, updateLive, updateTransport } from './pending';
+import { renderExport } from './pending';
 import { refreshPlanOverlay } from './plan-panel';
 import { resize } from './resize';
 import { onTourStop, renderReviewInfo, roomNow } from './review';
 import { initSimulate } from './simulate';
 import { STEPS, is2DVisible, is3DVisible, moveGlider, setStep } from './stepper';
 import { applyTheme } from './theme';
-import { dayDone } from './transport';
+import { dayDone, dayRange, drawTimeline, resetSim, seek, updateLive, updateTransport } from './transport';
 import { importPlan } from './versions';
 
 export function bindUI(): void {
@@ -142,6 +142,40 @@ export function bindUI(): void {
   );
   $('#rotateBtn').addEventListener('click', rotateSelected);
   $('#removeBtn').addEventListener('click', removeSelected);
+  $('#playBtn').addEventListener('click', () => {
+    if (state.sim && state.sim.done) resetSim(0);
+    state.playing = !state.playing;
+    updateTransport();
+  });
+  $('#restartBtn').addEventListener('click', () => {
+    resetSim(0);
+    updateTransport();
+  });
+  document.querySelectorAll<HTMLElement>('[data-speed]').forEach(b =>
+    b.addEventListener('click', () => {
+      state.speed = +(b.dataset.speed as string);
+      document
+        .querySelectorAll<HTMLElement>('[data-speed]')
+        .forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    })
+  );
+  $('#tl').addEventListener('click', e => {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect(),
+      d = dayRange(state.sim as NonNullable<typeof state.sim>);
+    seek(d.t0 + clamp((e.clientX - r.left) / r.width, 0, 1) * (d.t1 - d.t0));
+  });
+  $('#closeCompare').addEventListener('click', () => {
+    $('#comparePanel').hidden = true;
+  });
+  $('#lyrTraffic').addEventListener('change', e => {
+    const on = (e.target as HTMLInputElement).checked;
+    state.layers.traffic = on;
+    if (R3 && R3.heat) R3.heat.mesh.visible = on;
+    if (on) paintHeat();
+  });
+  $('#lyrWaits').addEventListener('change', e => {
+    state.layers.waits = (e.target as HTMLInputElement).checked;
+  });
   $('#assistantBtn').addEventListener('click', () => toggleChat());
   $('#chatClose').addEventListener('click', () => toggleChat(false));
   window.addEventListener('keydown', e => {

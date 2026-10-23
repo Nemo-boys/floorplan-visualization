@@ -242,18 +242,17 @@ export function bindUI(): void {
     refreshPlanOverlay();
   });
 }
+/* Planned difference 3 (PLAN.md): the badge names the renderer in use. */
 export function rendererNote(): void {
-  const gpu = typeof navigator !== 'undefined' && 'gpu' in navigator,
-    badge = $('#rendererBadge');
+  const badge = $('#rendererBadge');
   if (!R3) {
     badge.textContent = '3D off';
     badge.title = 'The 3D renderer didn’t start in this browser.';
     return;
   }
-  badge.textContent = R3.gl2 ? 'WebGL2' : 'WebGL1';
-  badge.title = gpu
-    ? 'This preview renders with WebGL2. WebGPU is available here, so the real build will use it with WebGL2 as the fallback.'
-    : 'This preview renders with WebGL2. WebGPU isn’t available here, which is when the real build falls back to WebGL2.';
+  badge.textContent = R3.kind === 'webgpu' ? 'WebGPU' : 'WebGL2';
+  badge.title =
+    R3.kind === 'webgpu' ? 'Rendering with WebGPU.' : 'Rendering with WebGL2. WebGPU isn’t available in this browser.';
 }
 let last = performance.now(),
   lastSun = 0,
@@ -311,10 +310,10 @@ export function loop(ts: number): void {
 export function initCapabilities(): void {
   renderExport();
 }
-export function init(): void {
+export async function init(): Promise<void> {
   const want = (location.hash || '').replace('#', '');
   state.dock = loadDock() || { open: false, corner: 'br', w: 440, h: 300 };
-  initThree();
+  await initThree();
   renderSampleThumbs();
   bindUI();
   initSimulate();

@@ -6,41 +6,45 @@ import { showNotice } from '../ui/toast';
 import { makeMaterials } from './materials';
 import { bindPointer } from './pointer';
 import { R3, setR3, type R3State } from './r3';
+import { chooseRenderer, type RendererChoice } from './renderer';
 
-export function initThree(): boolean {
-  let renderer: THREE.WebGLRenderer;
+export async function initThree(): Promise<boolean> {
+  let choice: RendererChoice;
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    choice = await chooseRenderer();
   } catch {
     showNotice(
       'This browser couldn’t start WebGL, so the 3D view is off. The plan, simulation and results still work.'
     );
     return false;
   }
+  const renderer = choice.renderer;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.02;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // The reference asks for PCFSoftShadowMap. three r186 removed it: WebGL already uses PCFShadowMap in its place,
+  // and WebGPU has no filter for it, so ask for PCFShadowMap directly (same result on WebGL, valid on WebGPU).
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   $('#view').appendChild(renderer.domElement);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 500);
   // The rest of R3 (sun, root, textures, materials, groups) is filled in below and by buildScene, as in the reference.
   setR3({
     renderer,
+    kind: choice.kind,
     scene,
     camera,
-    aniso: Math.min(8, renderer.capabilities.getMaxAnisotropy()),
-    gl2: renderer.capabilities.isWebGL2,
+    aniso: Math.min(8, choice.aniso),
     cache: {},
     people: new Map()
   } as unknown as R3State);
   const r = R3 as R3State;
-  scene.environment = buildEnvironment(renderer);
+  scene.environment = buildEnvironment(choice);
   const sun = new THREE.DirectionalLight(0xfff3e4, 2.7);
   sun.castShadow = true;
-  const big = renderer.capabilities.maxTextureSize >= 8192 && !isTouch;
+  const big = choice.maxTextureSize >= 8192 && !isTouch;
   sun.shadow.mapSize.set(big ? 4096 : 2048, big ? 4096 : 2048);
   sun.shadow.bias = -0.00035;
   sun.shadow.normalBias = 0.022;
@@ -57,7 +61,7 @@ export function initThree(): boolean {
   bindPointer(renderer.domElement);
   return true;
 }
-export function buildEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
+export function buildEnvironment(choice: RendererChoice): THREE.Texture {
   const env = new THREE.Scene();
   const geo = new THREE.SphereGeometry(60, 32, 16),
     pos = geo.attributes.position,
@@ -80,10 +84,7 @@ export function buildEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
   panel(34, 20, 0, 48, 0, 2.4);
   panel(22, 11, -40, 20, 22, 1.5);
   panel(18, 9, 34, 16, -28, 1.1);
-  const pm = new THREE.PMREMGenerator(renderer),
-    tex = pm.fromScene(env, 0.035).texture;
-  pm.dispose();
-  return tex;
+  return choice.pmrem(env, 0.035);
 }
 export function setSun(min: number): void {
   if (!R3) return;

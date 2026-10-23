@@ -1,6 +1,7 @@
 /* The three.js renderer, scene and camera, once initThree has started them (null when 3D is off). */
 import type * as THREE from 'three';
 import type { DoorGap, FurnItem, PlanWindow, Wall } from '../engine';
+import type { AnyRenderer, RendererKind } from './renderer';
 
 export type Mat = THREE.MeshStandardMaterial | THREE.MeshBasicMaterial;
 export interface Limb {
@@ -32,11 +33,11 @@ export interface Heat {
   mesh: THREE.Mesh;
 }
 export interface R3State {
-  renderer: THREE.WebGLRenderer;
+  renderer: AnyRenderer;
+  kind: RendererKind;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   aniso: number;
-  gl2: boolean;
   cache: Record<string, unknown>;
   people: Map<number, Person>;
   sun: THREE.DirectionalLight;

@@ -5,6 +5,10 @@
  *     baseUrl  default http://localhost:5174/reference.html  (start it with: npm run reference)
  *     outDir   default tests/visual/reference
  *   CAPTURE_ONLY=edit-swap,export  re-captures only those states and keeps the other shots already in outDir.
+ *   CAPTURE_CHANNEL=chrome         uses the installed Google Chrome instead of Playwright's Chromium (for WebGPU).
+ *   CAPTURE_ARGS="--disable-features=WebGPUService"  extra browser flags, separated by spaces.
+ *   --chrome and --no-webgpu after the folders do the same as the two lines above (npm scripts on Windows can't set
+ *   variables inline).
  *
  * Ported from tools/capture-reference.mjs: same states, steps, freeze and reference adjustments.
  * It also writes shots.json with each shot's 3D canvas rectangle, which compare.ts uses for the
@@ -225,7 +229,13 @@ async function main(): Promise<number> {
     console.error('Nothing is serving ' + base + '. Start it first (npm run reference, or npm run dev).');
     return 1;
   }
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    channel: process.env.CAPTURE_CHANNEL || (process.argv.includes('--chrome') ? 'chrome' : undefined),
+    args: (process.env.CAPTURE_ARGS || '')
+      .split(' ')
+      .filter(Boolean)
+      .concat(process.argv.includes('--no-webgpu') ? ['--disable-features=WebGPUService'] : [])
+  });
   const only = process.env.CAPTURE_ONLY ? process.env.CAPTURE_ONLY.split(',') : null;
   const manifest = path.join(outDir, 'shots.json');
   const kept: Shot[] =

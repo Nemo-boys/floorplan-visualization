@@ -69,6 +69,58 @@ function glbJson(glb: Uint8Array): Gltf {
   const jlen = dv.getUint32(12, true);
   return JSON.parse(new TextDecoder().decode(glb.subarray(20, 20 + jlen)));
 }
+/* The same model: identical glTF structure (nodes, materials, meshes, and accessor counts and bounds), and the same unique
+   vertices in every primitive. three r186 triangulates the flat caps of rounded boxes differently from r159, so the
+   bytes differ for those items while the shapes are identical (docs/deviations.md, row 3). */
+function expectSameModel(x: Uint8Array, y: Uint8Array): void {
+  const parse = (
+    glb: Uint8Array
+  ): {
+    json: Gltf & {
+      accessors: { bufferView: number; count: number; type: string; min?: number[]; max?: number[] }[];
+      bufferViews: { byteOffset: number }[];
+    };
+    bin: Uint8Array;
+  } => {
+    const dv = new DataView(glb.buffer, glb.byteOffset, glb.byteLength),
+      jlen = dv.getUint32(12, true);
+    return { json: JSON.parse(new TextDecoder().decode(glb.subarray(20, 20 + jlen))), bin: glb.subarray(28 + jlen) };
+  };
+  const a = parse(x),
+    b = parse(y);
+  expect(a.json.nodes).toEqual(b.json.nodes);
+  expect(a.json.materials).toEqual(b.json.materials);
+  expect(a.json.meshes).toEqual(b.json.meshes);
+  const shape = (acc: { count: number; type: string; min?: number[]; max?: number[] }) => [
+    acc.count,
+    acc.type,
+    acc.min,
+    acc.max
+  ];
+  expect(a.json.accessors.map(shape)).toEqual(b.json.accessors.map(shape));
+  const verts = (g: typeof a, i: number): Set<string> => {
+    const acc = g.json.accessors[i],
+      v = new Float32Array(
+        g.bin.buffer,
+        g.bin.byteOffset + g.json.bufferViews[acc.bufferView].byteOffset,
+        acc.count * 3
+      ),
+      out = new Set<string>();
+    for (let q = 0; q < v.length; q += 3)
+      out.add(v[q].toFixed(4) + ',' + v[q + 1].toFixed(4) + ',' + v[q + 2].toFixed(4));
+    return out;
+  };
+  for (const m of a.json.meshes)
+    for (const p of m.primitives) {
+      const va = verts(a, p.attributes.POSITION),
+        vb = verts(b, p.attributes.POSITION);
+      expect(
+        [...va].filter(k => !vb.has(k)),
+        m.name + ' has the same vertices'
+      ).toEqual([]);
+      expect(va.size).toBe(vb.size);
+    }
+}
 async function openExport(page: Page, url?: string): Promise<void> {
   await page.goto((url || '') + '#export');
   await expect(page.locator('#app')).toHaveClass(/step-export/);
@@ -201,7 +253,8 @@ test('the app builds the same bundle as the reference', async ({ page, browser }
       delete ja.exported_at;
       delete jb.exported_at;
       expect(ja).toEqual(jb);
-    } else
+    } else if (a[i].name === 'clinic.glb') expectSameModel(a[i].data, b[i].data);
+    else
       expect(Buffer.from(a[i].data).equals(Buffer.from(b[i].data)), a[i].name + ' is byte for byte the same').toBe(
         true
       );

@@ -63,7 +63,13 @@ def is_gguf_available() -> bool:
 class GGUFInferenceEngine:
     """Manages llama-cpp-python Llama instance with Metal acceleration and geometric logit masking."""
 
-    def __init__(self, model_path: Optional[str] = None, n_ctx: int = 2048, n_gpu_layers: int = -1):
+    def __init__(
+        self,
+        model_path: Optional[str] = None,
+        n_ctx: int = 2048,
+        n_gpu_layers: Optional[int] = None,
+        n_threads: Optional[int] = None,
+    ):
         try:
             from llama_cpp import Llama, LogitsProcessorList
             self._llama_class = Llama
@@ -80,11 +86,26 @@ class GGUFInferenceEngine:
                 "Place a .gguf model in checkpoints/ or export via Google Colab."
             )
 
-        logger.info("Initializing GGUF engine with model: %s (Metal n_gpu_layers=%d)", self.model_path, n_gpu_layers)
+        # For hybrid SSM architectures (NemotronH/Mamba-2), llama.cpp Metal GPU offloading
+        # can trigger KV-dimension slice mismatches; default to CPU (0) with multi-threaded SIMD
+        # unless explicitly overridden via AEGISPLAN_GPU_LAYERS.
+        if n_gpu_layers is None:
+            n_gpu_layers = int(os.environ.get("AEGISPLAN_GPU_LAYERS", "0"))
+
+        threads = n_threads or int(os.environ.get("AEGISPLAN_THREADS", str(os.cpu_count() or 8)))
+
+        logger.info(
+            "Initializing GGUF engine with model: %s (n_gpu_layers=%d, n_threads=%d)",
+            self.model_path,
+            n_gpu_layers,
+            threads,
+        )
         self.llm = self._llama_class(
             model_path=self.model_path,
             n_ctx=n_ctx,
             n_gpu_layers=n_gpu_layers,
+            n_threads=threads,
+            n_threads_batch=threads,
             verbose=False,
         )
 

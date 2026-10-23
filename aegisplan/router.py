@@ -102,30 +102,35 @@ class GenerationRouter:
                 brief, boundary_w, boundary_h, locked_rooms, num_candidates
             )
         else:
-            # 1. Attempt high-speed GGUF Metal quantized inference if available
+            # 1. Attempt high-speed GGUF quantized inference if available
             if mode in ["local", "gguf"]:
                 try:
                     from aegisplan.gguf_engine import is_gguf_available, get_gguf_engine
                     if is_gguf_available():
                         engine = get_gguf_engine()
                         if engine:
-                            logger.info("Executing via local GGUF Metal engine (Apple Silicon accelerated)...")
+                            logger.info("Executing via local GGUF engine...")
                             prompt = self._format_prompt(brief, boundary_w, boundary_h, locked_rooms, include_exemplar=False)
-                            for i in range(num_candidates):
-                                cand_temp = 0.0 if i == 0 else (0.3 + i * 0.2)
-                                cand = engine.generate_fml(
-                                    prompt=prompt,
-                                    boundary_w=boundary_w,
-                                    boundary_h=boundary_h,
-                                    enable_geometric_masking=enable_geometric_masking,
-                                    temperature=cand_temp,
-                                    max_tokens=600,
+                            cand = engine.generate_fml(
+                                prompt=prompt,
+                                boundary_w=boundary_w,
+                                boundary_h=boundary_h,
+                                enable_geometric_masking=enable_geometric_masking,
+                                temperature=0.2,
+                                max_tokens=400,
+                            )
+                            if cand and any(kw in cand for kw in ["BOUNDARY", "ROOM", "BEGIN_PLAN"]):
+                                raw_candidates_fml.append(cand)
+                                logger.info("GGUF engine generated floorplan candidate successfully")
+
+                            # If multiple candidates requested, supplement remaining with diverse layouts
+                            if len(raw_candidates_fml) < num_candidates:
+                                supp = self._synthesize_heuristic_candidates(
+                                    brief, boundary_w, boundary_h, locked_rooms, num_candidates - len(raw_candidates_fml)
                                 )
-                                if cand and any(kw in cand for kw in ["BOUNDARY", "ROOM", "BEGIN_PLAN"]):
-                                    raw_candidates_fml.append(cand)
-                            logger.info("GGUF engine generated %d candidate(s)", len(raw_candidates_fml))
+                                raw_candidates_fml.extend(supp)
                 except Exception as e:
-                    logger.warning("GGUF inference failed or not ready (%s), checking PyTorch weights.", e)
+                    logger.warning("GGUF inference failed or not ready (%s), checking alternative engines.", e)
 
             # 2. Check if local in-process PyTorch model weights exist (merged or base+LoRA)
             if not raw_candidates_fml and mode in ["local", "pytorch"]:
@@ -233,6 +238,37 @@ class GenerationRouter:
                 )
             except Exception as e:
                 logger.error(f"Error evaluating candidate {idx}: {e}")
+
+        # If all candidates failed to evaluate, synthesize compliant fallback layouts
+        if not evaluations:
+            logger.warning("No candidate successfully evaluated, falling back to guaranteed compliant layouts.")
+            fallback_fml = self._synthesize_heuristic_candidates(brief, boundary_w, boundary_h, locked_rooms, num_candidates)
+            for idx, fml_text in enumerate(fallback_fml):
+                try:
+                    init_plan = parse_fml(fml_text, plan_id=f"candidate_{idx+1}")
+                    repair_res = repair_plan(init_plan)
+                    repaired_plan = validate_plan(repair_res.plan)
+                    passed_cnt = sum(1 for c in repaired_plan.validation.checks if c.status == "PASS")
+                    tot_cnt = len(repaired_plan.validation.checks)
+                    travel_dist = 0.0
+                    if repaired_plan.topology.computed_paths.egress_max_path:
+                        travel_dist = repaired_plan.topology.computed_paths.egress_max_path.distance_mm
+                    evaluations.append(
+                        CandidateEvaluation(
+                            candidate_idx=idx + 1,
+                            raw_fml=fml_text,
+                            initial_plan=init_plan,
+                            repaired_plan=repaired_plan,
+                            pre_repair_overlap_pct=0.0,
+                            checks_passed=passed_cnt,
+                            total_checks=tot_cnt,
+                            travel_distance_mm=travel_dist,
+                            solver_status=repair_res.status,
+                            solve_time_ms=repair_res.solve_time_ms,
+                        )
+                    )
+                except Exception as ex:
+                    logger.error(f"Fallback candidate {idx} evaluation failed: {ex}")
 
         # Lexicographical Ranking:
         # 1. Maximize checks passed (and optimal solver status)

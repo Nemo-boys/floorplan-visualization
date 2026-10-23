@@ -47,16 +47,28 @@ def parse_fml(text: str, plan_id: str = "clinic_candidate_1") -> PlanDocument:
             boundary_h = int(m_b.group(2))
             continue
 
-        # ROOM <id> TYPE <type> RECT <x> <y> <w> <h> <LOCKED|FREE>
+        # ROOM <id> TYPE <type> RECT <x> <y> <w> <h> [LOCKED|FREE]
         m_r = re.match(
-            r"^ROOM\s+([a-zA-Z0-9_]+)\s+TYPE\s+([a-zA-Z0-9_]+)\s+RECT\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(LOCKED|FREE)$",
+            r"^ROOM\s+([a-zA-Z0-9_]+)\s+TYPE\s+([a-zA-Z0-9_]+)\s+RECT\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)(?:\s+(LOCKED|FREE))?$",
             line,
+            re.IGNORECASE,
         )
         if m_r:
-            r_id, r_type, x_s, y_s, w_s, h_s, lock_s = m_r.groups()
+            r_id, r_type_raw, x_s, y_s, w_s, h_s, lock_s = m_r.groups()
             x, y, w, h = int(x_s), int(y_s), int(w_s), int(h_s)
-            locked = (lock_s == "LOCKED")
+            locked = (lock_s and lock_s.upper() == "LOCKED")
             area_m2 = round((w * h) / 1_000_000.0, 2)
+
+            type_map = {
+                "waitingroom": "waiting",
+                "examroom": "exam",
+                "toilet": "restroom",
+                "bathroom": "restroom",
+                "hallway": "corridor",
+                "breakroom": "staff_break",
+                "utility": "clean_util",
+            }
+            r_type = type_map.get(r_type_raw.lower(), r_type_raw.lower())
 
             ada_circle = None
             if r_type in ACCESSIBLE_ROOM_TYPES:

@@ -138,16 +138,21 @@ class GGUFInferenceEngine:
             except Exception as e:
                 logger.warning("Could not attach logits processor to GGUF: %s", e)
 
-        # Build Chat ML formatted prompt if needed
+        # Build Chat ML formatted prompt targeting strict FML-DSL grammar
         system_content = (
             "You are AegisPlan, an autonomous AI architect specializing in U.S. Healthcare Outpatient Facilities.\n"
-            "Output valid FML-DSL code matching the exact grammar: BOUNDARY RECT 0 0 <W> <H>, ROOM, DOOR, FDOOR, END_PLAN."
+            "Output valid FML-DSL code matching the exact grammar:\n"
+            "BOUNDARY RECT 0 0 <W> <H>\n"
+            "ROOM <id> TYPE <type> RECT <x> <y> <w> <h> <LOCKED|FREE>\n"
+            "DOOR <id> CONNECT <r1> <r2> AT <x> <y> WIDTH <w>\n"
+            "FDOOR <id> CONNECT <r1> OUTSIDE AT <x> <y> WIDTH <w>\n"
+            "END_PLAN"
         )
 
         full_prompt = (
             f"<SPECIAL_10>System\n{system_content}\n"
             f"<SPECIAL_11>User\n{prompt}\n"
-            f"<SPECIAL_11>Assistant\n<think>\n"
+            f"<SPECIAL_11>Assistant\n<think></think>\n<fml>\nBOUNDARY RECT 0 0 {boundary_w} {boundary_h}\n"
         )
 
         output = self.llm(
@@ -159,23 +164,33 @@ class GGUFInferenceEngine:
             logits_processor=logits_processor,
         )
 
-        text = output["choices"][0]["text"]
+        text = output["choices"][0]["text"].strip()
         logger.debug("Raw GGUF output: %s", text[:200])
 
-        # Extract FML code
-        if "<fml>" in text and "</fml>" in text:
-            fml_part = text.split("<fml>")[1].split("</fml>")[0].strip()
-        elif "<fml>" in text:
-            fml_part = text.split("<fml>")[1].strip()
-        elif "BOUNDARY" in text:
-            fml_part = text[text.find("BOUNDARY"):]
-        else:
-            fml_part = text.strip()
+        # Clean any tags if model emitted them
+        if "</think>" in text:
+            text = text.split("</think>")[-1].strip()
+        if "<fml>" in text:
+            text = text.split("<fml>")[-1].strip()
+        if "</fml>" in text:
+            text = text.split("</fml>")[0].strip()
 
-        if "END_PLAN" not in fml_part:
-            fml_part += "\nEND_PLAN"
+        # Build clean FML document
+        lines = []
+        has_boundary = False
+        for line in text.splitlines():
+            line_str = line.strip()
+            if not line_str or line_str == "END_PLAN":
+                continue
+            if line_str.startswith("BOUNDARY"):
+                has_boundary = True
+            lines.append(line_str)
 
-        return fml_part
+        if not has_boundary:
+            lines.insert(0, f"BOUNDARY RECT 0 0 {boundary_w} {boundary_h}")
+
+        lines.append("END_PLAN")
+        return "\n".join(lines)
 
 
 def get_gguf_engine() -> Optional[GGUFInferenceEngine]:

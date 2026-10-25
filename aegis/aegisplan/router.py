@@ -47,6 +47,47 @@ FDOOR door_5 CONNECT waiting_1 OUTSIDE AT 3000 0 WIDTH 1220
 END_PLAN"""
 
 
+TEMPLATE_W, TEMPLATE_H = 16000, 12000
+
+
+def _fit_to_boundary(fml: str, w: int, h: int, grid_mm: int = 100) -> str:
+    """Scale a template drawn on TEMPLATE_W x TEMPLATE_H to a w x h boundary.
+
+    Room edges and door points are scaled as absolute coordinates and snapped to the grid,
+    so rooms that share a wall still share it and doors stay on it. The corridor band keeps
+    its width (it is sized for ADA); only the room rows on either side stretch in y.
+    """
+    corr = next(l.split() for l in fml.splitlines() if " TYPE corridor " in l)
+    c0, c1 = int(corr[6]), int(corr[6]) + int(corr[8])
+    k = (h - (c1 - c0)) / (TEMPLATE_H - (c1 - c0))
+
+    def sx(v):
+        return round(int(v) * w / TEMPLATE_W / grid_mm) * grid_mm
+
+    def sy(v):
+        v = int(v)
+        if v <= c0:
+            return round(v * k / grid_mm) * grid_mm
+        if v >= c1:
+            return round(c0 * k / grid_mm) * grid_mm + (c1 - c0) + round((v - c1) * k / grid_mm) * grid_mm
+        return round(c0 * k / grid_mm) * grid_mm + (v - c0)
+
+    out = []
+    for line in fml.splitlines():
+        t = line.split()
+        if t[:1] == ["ROOM"]:
+            x, y, rw, rh = (int(v) for v in t[5:9])
+            x0, y0 = sx(x), sy(y)
+            t[5:9] = [str(x0), str(y0), str(sx(x + rw) - x0), str(sy(y + rh) - y0)]
+        elif t[:1] in (["DOOR"], ["FDOOR"]):
+            i = t.index("AT")
+            t[i + 1:i + 3] = [str(sx(t[i + 1])), str(sy(t[i + 2]))]
+        elif t[:1] == ["BOUNDARY"]:
+            t = ["BOUNDARY", "RECT", "0", "0", str(w), str(h)]
+        out.append(" ".join(t))
+    return "\n".join(out)
+
+
 class CandidateEvaluation:
     def __init__(
         self,
@@ -386,12 +427,13 @@ class GenerationRouter:
         candidates = []
 
         # Candidate 1: Standard Single-Corridor 3-Exam Clinic
-        c1 = f"""BOUNDARY RECT 0 0 {w} {h}
+        c1 = """BOUNDARY RECT 0 0 16000 12000
 ROOM waiting_1 TYPE waiting RECT 0 0 5500 5000 LOCKED
 ROOM reception_1 TYPE reception RECT 5500 0 3500 5000 FREE
 ROOM restroom_1 TYPE restroom RECT 9000 0 2500 5000 LOCKED
-ROOM staff_break_1 TYPE staff_break RECT 11500 0 4500 5000 FREE
-ROOM corridor_1 TYPE corridor RECT 0 5000 {w} 2000 LOCKED
+ROOM staff_break_1 TYPE staff_break RECT 11500 0 2500 5000 FREE
+ROOM nurse_station_1 TYPE nurse_station RECT 14000 0 2000 5000 FREE
+ROOM corridor_1 TYPE corridor RECT 0 5000 16000 2000 LOCKED
 ROOM exam_1 TYPE exam RECT 0 7000 3200 5000 FREE
 ROOM exam_2 TYPE exam RECT 3200 7000 3200 5000 FREE
 ROOM exam_3 TYPE exam RECT 6400 7000 3200 5000 FREE
@@ -400,7 +442,8 @@ ROOM soiled_util_1 TYPE soiled_util RECT 12800 7000 3200 5000 FREE
 DOOR door_1 CONNECT waiting_1 corridor_1 AT 2750 5000 WIDTH 1065
 DOOR door_2 CONNECT reception_1 corridor_1 AT 7250 5000 WIDTH 915
 DOOR door_3 CONNECT restroom_1 corridor_1 AT 10250 5000 WIDTH 915
-DOOR door_4 CONNECT staff_break_1 corridor_1 AT 13750 5000 WIDTH 915
+DOOR door_4 CONNECT staff_break_1 corridor_1 AT 12750 5000 WIDTH 915
+DOOR door_11 CONNECT nurse_station_1 corridor_1 AT 15000 5000 WIDTH 915
 DOOR door_5 CONNECT exam_1 corridor_1 AT 1600 7000 WIDTH 915
 DOOR door_6 CONNECT exam_2 corridor_1 AT 4800 7000 WIDTH 915
 DOOR door_7 CONNECT exam_3 corridor_1 AT 8000 7000 WIDTH 915
@@ -411,20 +454,22 @@ END_PLAN"""
         candidates.append(c1)
 
         # Candidate 2: Compact Central Hub Clinic
-        c2 = f"""BOUNDARY RECT 0 0 {w} {h}
+        c2 = """BOUNDARY RECT 0 0 16000 12000
 ROOM waiting_1 TYPE waiting RECT 0 0 6000 5000 LOCKED
-ROOM corridor_1 TYPE corridor RECT 0 5000 {w} 2200 LOCKED
+ROOM corridor_1 TYPE corridor RECT 0 5000 16000 2200 LOCKED
 ROOM exam_1 TYPE exam RECT 0 7200 3600 4800 FREE
 ROOM exam_2 TYPE exam RECT 3600 7200 3600 4800 FREE
 ROOM exam_3 TYPE exam RECT 7200 7200 3600 4800 FREE
 ROOM consult_1 TYPE consult RECT 10800 7200 5200 4800 FREE
 ROOM restroom_1 TYPE restroom RECT 6000 0 2600 5000 LOCKED
 ROOM clean_util_1 TYPE clean_util RECT 8600 0 3400 5000 FREE
-ROOM staff_break_1 TYPE staff_break RECT 12000 0 4000 5000 FREE
+ROOM staff_break_1 TYPE staff_break RECT 12000 0 2000 5000 FREE
+ROOM nurse_station_1 TYPE nurse_station RECT 14000 0 2000 5000 FREE
 DOOR door_1 CONNECT waiting_1 corridor_1 AT 3000 5000 WIDTH 1065
 DOOR door_2 CONNECT restroom_1 corridor_1 AT 7300 5000 WIDTH 915
 DOOR door_3 CONNECT clean_util_1 corridor_1 AT 10300 5000 WIDTH 915
-DOOR door_4 CONNECT staff_break_1 corridor_1 AT 14000 5000 WIDTH 915
+DOOR door_4 CONNECT staff_break_1 corridor_1 AT 13000 5000 WIDTH 915
+DOOR door_10 CONNECT nurse_station_1 corridor_1 AT 15000 5000 WIDTH 915
 DOOR door_5 CONNECT exam_1 corridor_1 AT 1800 7200 WIDTH 915
 DOOR door_6 CONNECT exam_2 corridor_1 AT 5400 7200 WIDTH 915
 DOOR door_7 CONNECT exam_3 corridor_1 AT 9000 7200 WIDTH 915
@@ -434,16 +479,17 @@ END_PLAN"""
         candidates.append(c2)
 
         # Candidate 3: Dual Procedure Clinic
-        c3 = f"""BOUNDARY RECT 0 0 {w} {h}
+        c3 = """BOUNDARY RECT 0 0 16000 12000
 ROOM waiting_1 TYPE waiting RECT 0 0 5000 4800 LOCKED
 ROOM reception_1 TYPE reception RECT 5000 0 4000 4800 FREE
-ROOM corridor_1 TYPE corridor RECT 0 4800 {w} 2400 LOCKED
+ROOM corridor_1 TYPE corridor RECT 0 4800 16000 2400 LOCKED
 ROOM procedure_1 TYPE procedure RECT 0 7200 4500 4800 FREE
 ROOM exam_1 TYPE exam RECT 4500 7200 3500 4800 FREE
 ROOM exam_2 TYPE exam RECT 8000 7200 3500 4800 FREE
 ROOM staff_break_1 TYPE staff_break RECT 11500 7200 4500 4800 FREE
 ROOM restroom_1 TYPE restroom RECT 9000 0 2500 4800 LOCKED
-ROOM clean_util_1 TYPE clean_util RECT 11500 0 4500 4800 FREE
+ROOM clean_util_1 TYPE clean_util RECT 11500 0 2500 4800 FREE
+ROOM nurse_station_1 TYPE nurse_station RECT 14000 0 2000 4800 FREE
 DOOR door_1 CONNECT waiting_1 corridor_1 AT 2500 4800 WIDTH 1065
 DOOR door_2 CONNECT reception_1 corridor_1 AT 7000 4800 WIDTH 915
 DOOR door_3 CONNECT procedure_1 corridor_1 AT 2250 7200 WIDTH 1065
@@ -451,9 +497,10 @@ DOOR door_4 CONNECT exam_1 corridor_1 AT 6250 7200 WIDTH 915
 DOOR door_5 CONNECT exam_2 corridor_1 AT 9750 7200 WIDTH 915
 DOOR door_6 CONNECT staff_break_1 corridor_1 AT 13750 7200 WIDTH 915
 DOOR door_7 CONNECT restroom_1 corridor_1 AT 10250 4800 WIDTH 915
-DOOR door_8 CONNECT clean_util_1 corridor_1 AT 13750 4800 WIDTH 915
+DOOR door_8 CONNECT clean_util_1 corridor_1 AT 12750 4800 WIDTH 915
+DOOR door_10 CONNECT nurse_station_1 corridor_1 AT 15000 4800 WIDTH 915
 FDOOR door_9 CONNECT waiting_1 OUTSIDE AT 2500 0 WIDTH 1220
 END_PLAN"""
         candidates.append(c3)
 
-        return candidates[:n]
+        return [_fit_to_boundary(c, w, h) for c in candidates[:n]]

@@ -32,4 +32,10 @@ describe('AegisPlan fixtures', () => {
       expect(day.seen).toBeGreaterThan(0);
       expect(day.unreachable).toBe(0);
     });
+
+  it('a generated nurse station becomes the nurses’ home', () => {
+    const P = E.preparePlan(read('tests/fixtures/aegis/fallback_1.plan.json') as PlanJson, []);
+    expect(P.m.rooms.some(r => r.type === 'nurse_station')).toBe(true);
+    expect(P.info.nurseLabel).not.toBe('Corridor');
+  });
 });

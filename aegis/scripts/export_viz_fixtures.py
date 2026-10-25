@@ -10,7 +10,7 @@ from pathlib import Path
 
 from aegisplan.export_viz import to_viz_plan
 from aegisplan.fml_parser import parse_fml
-from aegisplan.router import FEW_SHOT_EXEMPLAR
+from aegisplan.router import FEW_SHOT_EXEMPLAR, GenerationRouter
 from aegisplan.validator import validate_plan
 
 AEGIS_ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +30,10 @@ def main():
                 break
             msgs = json.loads(line)["messages"]
             plans.append((f"test_{i + 1:02d}", next(m["content"] for m in msgs if m["role"] == "assistant")))
+
+    # The offline fallback candidates include a nurse station.
+    fallback = GenerationRouter()._synthesize_heuristic_candidates("", 24000, 14000, None, 3)
+    plans += [(f"fallback_{i + 1}", fml) for i, fml in enumerate(fallback)]
 
     for name, fml in plans:
         viz = to_viz_plan(validate_plan(parse_fml(fml, plan_id=name)), name=f"AegisPlan {name}")

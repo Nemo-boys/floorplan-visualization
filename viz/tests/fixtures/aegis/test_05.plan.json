@@ -1,0 +1,341 @@
+{
+  "schema_version": "0.1",
+  "units": "mm",
+  "origin": "bottom-left; x = east, y = north",
+  "building_type": "clinic",
+  "name": "AegisPlan test_05",
+  "blurb": "",
+  "footprint": {
+    "width_mm": 21000,
+    "depth_mm": 13000
+  },
+  "rooms": [
+    {
+      "id": "corridor_1",
+      "type": "corridor",
+      "rect": {
+        "x_mm": 0,
+        "y_mm": 7000,
+        "w_mm": 21000,
+        "h_mm": 2000
+      }
+    },
+    {
+      "id": "waiting_1",
+      "type": "waiting",
+      "rect": {
+        "x_mm": 0,
+        "y_mm": 9000,
+        "w_mm": 5000,
+        "h_mm": 4000
+      }
+    },
+    {
+      "id": "exam_1",
+      "type": "exam_room",
+      "rect": {
+        "x_mm": 0,
+        "y_mm": 0,
+        "w_mm": 3200,
+        "h_mm": 7000
+      }
+    },
+    {
+      "id": "exam_2",
+      "type": "exam_room",
+      "rect": {
+        "x_mm": 3200,
+        "y_mm": 0,
+        "w_mm": 3200,
+        "h_mm": 7000
+      }
+    },
+    {
+      "id": "exam_3",
+      "type": "exam_room",
+      "rect": {
+        "x_mm": 6400,
+        "y_mm": 0,
+        "w_mm": 3200,
+        "h_mm": 7000
+      }
+    },
+    {
+      "id": "exam_4",
+      "type": "exam_room",
+      "rect": {
+        "x_mm": 9600,
+        "y_mm": 0,
+        "w_mm": 3200,
+        "h_mm": 7000
+      }
+    },
+    {
+      "id": "exam_5",
+      "type": "exam_room",
+      "rect": {
+        "x_mm": 12800,
+        "y_mm": 0,
+        "w_mm": 3200,
+        "h_mm": 7000
+      }
+    },
+    {
+      "id": "exam_6",
+      "type": "exam_room",
+      "rect": {
+        "x_mm": 16000,
+        "y_mm": 0,
+        "w_mm": 3200,
+        "h_mm": 7000
+      }
+    },
+    {
+      "id": "reception_1",
+      "type": "reception",
+      "rect": {
+        "x_mm": 7500,
+        "y_mm": 9000,
+        "w_mm": 3500,
+        "h_mm": 4000
+      }
+    },
+    {
+      "id": "restroom_1",
+      "type": "restroom",
+      "rect": {
+        "x_mm": 5000,
+        "y_mm": 9000,
+        "w_mm": 2500,
+        "h_mm": 4000
+      }
+    }
+  ],
+  "doors": [
+    {
+      "id": "door_1",
+      "kind": "door",
+      "connects": [
+        "waiting_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        2500,
+        9000
+      ],
+      "width_mm": 1065,
+      "is_entrance": false
+    },
+    {
+      "id": "door_2",
+      "kind": "door",
+      "connects": [
+        "waiting_1",
+        "exterior"
+      ],
+      "center_mm": [
+        2500,
+        13000
+      ],
+      "width_mm": 1220,
+      "is_entrance": true
+    },
+    {
+      "id": "door_3",
+      "kind": "door",
+      "connects": [
+        "restroom_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        6250,
+        9000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_4",
+      "kind": "door",
+      "connects": [
+        "reception_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        9250,
+        9000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_5",
+      "kind": "door",
+      "connects": [
+        "exam_1",
+        "corridor_1"
+      ],
+      "center_mm": [
+        1600,
+        7000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_6",
+      "kind": "door",
+      "connects": [
+        "exam_2",
+        "corridor_1"
+      ],
+      "center_mm": [
+        4800,
+        7000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_7",
+      "kind": "door",
+      "connects": [
+        "exam_3",
+        "corridor_1"
+      ],
+      "center_mm": [
+        8000,
+        7000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_8",
+      "kind": "door",
+      "connects": [
+        "exam_4",
+        "corridor_1"
+      ],
+      "center_mm": [
+        11200,
+        7000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_9",
+      "kind": "door",
+      "connects": [
+        "exam_5",
+        "corridor_1"
+      ],
+      "center_mm": [
+        14400,
+        7000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    },
+    {
+      "id": "door_10",
+      "kind": "door",
+      "connects": [
+        "exam_6",
+        "corridor_1"
+      ],
+      "center_mm": [
+        17600,
+        7000
+      ],
+      "width_mm": 915,
+      "is_entrance": false
+    }
+  ],
+  "checks": [
+    {
+      "rule": "GEOM-BOUNDARY-01",
+      "label": "Rooms inside the building outline",
+      "pass": true,
+      "status": "PASS",
+      "detail": "All rooms strictly inside boundary (required: 100% room containment inside boundary polygon)",
+      "source": "Architectural Standard Footprint Containment"
+    },
+    {
+      "rule": "GEOM-OVERLAP-02",
+      "label": "No overlapping rooms",
+      "pass": true,
+      "status": "PASS",
+      "detail": "0.0% overlap (required: 0.0% overlap between distinct rooms)",
+      "source": "Building Code Architectural Separation & 2D Interval Disjointness"
+    },
+    {
+      "rule": "ADA-404.2.3",
+      "label": "Door clear widths",
+      "pass": true,
+      "status": "PASS",
+      "detail": "All 10 doors meet required clear width (>= 915mm clinical, >= 815mm general) (required: >= 815mm general; >= 915mm exam/patient doors)",
+      "source": "ADA Accessibility Standards, Chapter 4 \u00a7404.2.3 Clear Width"
+    },
+    {
+      "rule": "ADA-403.5.1",
+      "label": "Corridor width",
+      "pass": true,
+      "status": "PASS",
+      "detail": "Corridor width: 2000mm >= 1830mm (required: >= 1830mm (72 in) for outpatient clinic primary circulation)",
+      "source": "ADA Accessibility Standards \u00a7403.5.1 / VA Space Planning Criteria"
+    },
+    {
+      "rule": "ADA-304.3",
+      "label": "Wheelchair turning space",
+      "pass": true,
+      "status": "PASS",
+      "detail": "All accessible rooms accommodate 1525mm diameter turning circle (required: >= 1525mm (60 in) clear diameter; >= 2150mm min dim for single-user ADA restroom)",
+      "source": "ADA Accessibility Standards, Chapter 3 \u00a7304.3 Turning Space"
+    },
+    {
+      "rule": "FGI-2.1-2.2",
+      "label": "Exam room size",
+      "pass": true,
+      "status": "PASS",
+      "detail": "All 6 exam rooms exceed 11.15 m2 and 3048mm minimum dimension (required: Area >= 11.15 m2 (120 sq ft) and min dimension >= 3048mm (10 ft))",
+      "source": "FGI Guidelines for Design and Construction of Outpatient Facilities, \u00a72.1-2.2"
+    },
+    {
+      "rule": "IBC-1017-REACH",
+      "label": "Every room reachable from an exit",
+      "pass": true,
+      "status": "PASS",
+      "detail": "100% of rooms reachable via BFS door traversal (required: 100% of rooms must be reachable from exterior exit (OUTSIDE))",
+      "source": "IBC Chapter 10 / NFPA-101 Means of Egress Reachability"
+    },
+    {
+      "rule": "IBC-1017-DIST",
+      "label": "Exit travel distance",
+      "pass": true,
+      "status": "PASS",
+      "detail": "Max travel distance 28900mm <= 45,720mm limit (required: <= 45,720mm (150 ft unsprinklered) or <= 60,960mm (200 ft sprinklered))",
+      "source": "IBC Table 1017.2 / NFPA-101 Exit Access Travel Distance"
+    }
+  ],
+  "metrics": {
+    "boundary_area_m2": 273.0,
+    "room_area_m2": 220.4
+  },
+  "provenance": {
+    "generator": "aegisplan",
+    "plan_id": "test_05",
+    "generator_mode": "local_vllm_xgrammar",
+    "solver_status": "OPTIMAL",
+    "solve_time_ms": 0,
+    "source_origin": "top-left; x = east, y = south",
+    "locked_rooms": [
+      "corridor_1",
+      "waiting_1"
+    ],
+    "unmapped_room_types": [],
+    "validation_summary": "Passed 8 of 8 implemented geometry and code checks; MEP, fire-resistance ratings, and acoustic STC requirements were not evaluated.",
+    "conflict_core": []
+  }
+}

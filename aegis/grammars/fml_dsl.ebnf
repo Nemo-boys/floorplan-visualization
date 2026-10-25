@@ -1,0 +1,19 @@
+root ::= header_block room_block+ door_block+ fdoor_block+ "END_PLAN"
+
+header_block ::= "BOUNDARY RECT 0 0 " dim_mm " " dim_mm "\n"
+
+room_block ::= "ROOM " room_id " TYPE " room_type " RECT " coord_mm " " coord_mm " " dim_mm " " dim_mm " " lock_flag "\n"
+
+door_block ::= "DOOR " door_id " CONNECT " room_id " " room_id " AT " coord_mm " " coord_mm " WIDTH " door_w "\n"
+
+fdoor_block ::= "FDOOR " door_id " CONNECT " room_id " OUTSIDE AT " coord_mm " " coord_mm " WIDTH " door_w "\n"
+
+room_type ::= "waiting" | "reception" | "corridor" | "exam" | "consult" | "procedure" | "restroom" | "clean_util" | "soiled_util" | "staff_break" | "bedroom" | "bathroom" | "kitchen" | "living"
+
+room_id ::= [a-z]+ "_" [1-9][0-9]?
+door_id ::= "door_" [1-9][0-9]?
+lock_flag ::= "LOCKED" | "FREE"
+
+coord_mm ::= "0" | ([1-9][0-9]{0,2} ("00" | "50"))
+dim_mm ::= [1-9][0-9]{0,1} ("00" | "50")
+door_w ::= "815" | "900" | "915" | "1000" | "1065" | "1220"

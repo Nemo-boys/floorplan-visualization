@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AegisPlan | Neuro-Symbolic Healthcare Spatial Synthesis</title>
+  <meta name="description" content="Autonomous Engine for Geometrically & Institutionally Sound Healthcare Floorplans powered by NVIDIA Nemotron and Google OR-Tools CP-SAT.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --bg-base: #0a0d13;
+      --bg-surface: #111622;
+      --bg-surface-elevated: #161d2d;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-color-focus: rgba(56, 189, 248, 0.4);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-purple: #8b5cf6;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #3b82f6;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      height: 60px;
+      background: rgba(17, 22, 34, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: white;
+      box-shadow: 0 0 16px rgba(6, 182, 212, 0.4);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title span {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .badge-privacy {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .badge-privacy.cloud {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+    }
+
+    .badge-gpu {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    /* Main Layout */
+    .app-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 360px 1fr 340px;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
+    /* Sidebar Left: Input & Candidates */
+    .sidebar-left {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 16px;
+      gap: 18px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    textarea, select, input {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    textarea:focus, select:focus, input:focus {
+      border-color: var(--border-color-focus);
+      box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #06b6d4, #2563eb);
+      color: white;
+      box-shadow: 0 2px 10px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 16px rgba(6, 182, 212, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Candidate Cards */
+    .candidates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .candidate-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .candidate-card:hover {
+      border-color: rgba(6, 182, 212, 0.4);
+    }
+
+    .candidate-card.active {
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.05);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
+    }
+
+    .candidate-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .rank-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .candidate-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .metric-item span {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* Center Stage: Viewers */
+    .stage-container {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-base);
+      position: relative;
+    }
+
+    .stage-toolbar {
+      height: 48px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+    }
+
+    .tab-pills {
+      display: flex;
+      background: var(--bg-base);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      border: 1px solid var(--border-color);
+    }
+
+    .tab-pill {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-muted);
+      border: none;
+      background: none;
+      transition: all 0.2s;
+    }
+
+    .tab-pill.active {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .layer-toggles {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .layer-toggles label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .canvas-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #planSvg {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      user-select: none;
+    }
+
+    #threeContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    /* Sidebar Right: Compliance & Inspector */
+    .sidebar-right {
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 16px;
+      gap: 18px;
+    }
+
+    .compliance-summary {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+    }
+
+    .summary-stats {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-emerald);
+    }
+
+    .stat-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .rule-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .rule-card.pass {
+      border-left: 3px solid var(--accent-emerald);
+    }
+
+    .rule-card.fail {
+      border-left: 3px solid var(--accent-rose);
+      background: rgba(244, 63, 94, 0.04);
+    }
+
+    .rule-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rule-id {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .rule-status {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .rule-status.pass {
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .rule-status.fail {
+      color: #fb7185;
+      background: rgba(244, 63, 94, 0.15);
+    }
+
+    .rule-detail {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .rule-citation {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    /* Room Inspector Card */
+    .inspector-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .inspector-card h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+
+    .edit-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 13, 19, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 50;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(6, 182, 212, 0.2);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Infeasible Conflict Box */
+    .conflict-alert {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      color: #fda4af;
+      font-size: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .conflict-alert h4 {
+      font-weight: 700;
+      color: #fb7185;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="logo-badge">A</div>
+      <div class="brand-title">
+        AegisPlan
+        <span>Neuro-Symbolic Healthcare Spatial Synthesis</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="btnExportJson" class="btn btn-secondary" style="font-size: 11px; padding: 5px 12px; display: flex; align-items: center; gap: 5px;" title="Export structured plan.json">
+        <span>📄</span> Export plan.json
+      </button>
+      <button id="btnExportSvg" class="btn btn-secondary" style="font-size: 11px; padding: 5px 12px; display: flex; align-items: center; gap: 5px;" title="Export CAD SVG vector floorplan">
+        <span>📐</span> Export CAD SVG
+      </button>
+      <div id="privacyBadge" class="badge-privacy">
+        <span>🔒</span> 100% Local Confidential (0% Leaks)
+      </div>
+      <div id="gpuBadge" class="badge-gpu">Detecting WebGPU...</div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="app-container">
+
+    <!-- Left Sidebar: Controls & Candidates -->
+    <div class="sidebar-left">
+      <div>
+        <div class="panel-title">Clinical Synthesis Brief</div>
+        <div class="input-group">
+          <label for="briefPreset">Quick Clinical Presets</label>
+          <select id="briefPreset">
+            <option value="preset_standard">Standard 3-Exam Primary Care Clinic</option>
+            <option value="preset_specialty">Specialty Clinic (Procedure + Consult)</option>
+            <option value="preset_infeasible">Infeasible Stress Test (Conflict Core Demo)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="briefText">Natural Language Requirements</label>
+        <textarea id="briefText" rows="4">Primary care outpatient clinic with waiting area, reception desk, central circulation corridor, 3 standard exam rooms, ADA single-user restroom, staff breakroom, and clean/soiled utility support rooms.</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="input-group">
+          <label for="buildingWidth">Width (mm)</label>
+          <input type="number" id="buildingWidth" value="16000" step="1000">
+        </div>
+        <div class="input-group">
+          <label for="buildingHeight">Depth (mm)</label>
+          <input type="number" id="buildingHeight" value="12000" step="1000">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="executionMode">Execution Tier</label>
+        <select id="executionMode">
+          <option value="local">Local GGUF / Metal (Nemotron Nano 9B Q4_K_M)</option>
+          <option value="pytorch">Local PyTorch CPU (Merged FP16)</option>
+          <option value="cloud">Cloud-Burst (OpenRouter Pinned CoreWeave/DeepInfra)</option>
+        </select>
+      </div>
+
+      <!-- Geometric Logits Masking Toggle -->
+      <div class="input-group" style="padding: 10px; background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+        <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin: 0;">
+          <span style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-weight: 600; color: var(--text-main); font-size: 12px; display: flex; align-items: center; gap: 5px;">
+              <span>🛡️</span> Geometric Logits Masking
+            </span>
+            <span style="font-size: 10px; color: var(--text-dim);">Custom vLLM / llama.cpp processor (boundary & overlap constraint masking)</span>
+          </span>
+          <input type="checkbox" id="geometricMaskingToggle" style="width: 18px; height: 18px; accent-color: var(--accent-cyan); cursor: pointer;">
+        </label>
+      </div>
+
+      <button id="btnGenerate" class="btn btn-primary" style="font-weight: 700; font-size: 14px; padding: 12px; letter-spacing: 0.3px;">
+        <span>⚡</span> Generate 3 Candidates (CP-SAT)
+      </button>
+
+      <!-- Conflict alert if infeasible -->
+      <div id="conflictAlert" class="conflict-alert">
+        <h4>⚠️ Minimal Unsatisfiable Core</h4>
+        <div id="conflictCoreList"></div>
+      </div>
+
+      <!-- Parallel Candidates List -->
+      <div>
+        <div class="panel-title">
+          <span>Parallel Candidates</span>
+          <span style="font-size: 11px; color: var(--accent-cyan);" id="telemetrySolveTime">42 ms</span>
+        </div>
+        <div class="candidates-list" id="candidatesList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Stage: 2D Floorplan & 3D WebGPU -->
+    <div class="stage-container">
+      <div class="stage-toolbar">
+        <div class="tab-pills">
+          <button id="tab2D" class="tab-pill active">2D Architectural CAD</button>
+          <button id="tab3D" class="tab-pill">3D Extrusion Walkthrough</button>
+        </div>
+        <div class="layer-toggles">
+          <label><input type="checkbox" id="layerRooms" checked> Rooms</label>
+          <label><input type="checkbox" id="layerAda" checked> ADA Circles</label>
+          <label><input type="checkbox" id="layerPatient" checked> <span style="color: var(--accent-cyan)">Patient Flow</span></label>
+          <label><input type="checkbox" id="layerStaff" checked> <span style="color: var(--accent-emerald)">Staff Route</span></label>
+          <label><input type="checkbox" id="layerEgress" checked> <span style="color: var(--accent-rose)">Egress</span></label>
+        </div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <svg id="planSvg" viewBox="0 0 17000 13000"></svg>
+        <div id="threeContainer"></div>
+
+        <div id="loadingOverlay" class="loading-overlay">
+          <div class="spinner"></div>
+          <div style="font-size: 13px; font-weight: 500;">Synthesizing & Solving OR-Tools CP-SAT...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Regulatory & Inspector -->
+    <div class="sidebar-right">
+      <!-- Compliance Summary -->
+      <div>
+        <div class="panel-title">Regulatory Verification</div>
+        <div class="compliance-summary">
+          <div class="summary-stats">
+            <div id="passedCount" class="stat-number">12</div>
+            <div id="totalCount" class="stat-desc">/ 12 Checks Passed</div>
+          </div>
+          <div id="summaryStatement" style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">
+            Evaluating against ADA §404/403/304, FGI §2.1-2.2, and IBC-1017.
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Room Inspector -->
+      <div id="roomInspector" class="inspector-card" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h4 id="inspectRoomLabel">Exam Room 1</h4>
+          <span id="inspectLockBadge" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1);">FREE</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+          <div>Dimensions: <span id="inspectDim" style="color: var(--text-main);">3200 x 5000 mm</span></div>
+          <div>Area: <span id="inspectArea" style="color: var(--text-main);">16.0 m²</span></div>
+        </div>
+        <div class="edit-controls">
+          <button id="btnEnlarge" class="btn btn-secondary" style="font-size: 11px; padding: 6px;">+20% Area</button>
+          <button id="btnShrink" class="btn btn-secondary" style="font-size: 11px; padding: 6px;">-20% Area</button>
+        </div>
+        <button id="btnToggleLock" class="btn btn-secondary" style="font-size: 11px; padding: 6px; width: 100%;">
+          Toggle Hard Lock
+        </button>
+      </div>
+
+      <!-- Rule Checklist -->
+      <div>
+        <div class="panel-title">Machine-Checkable Codes</div>
+        <div id="ruleCardsList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentPlan = null;
+    let selectedRoomId = null;
+    let candidatesData = [];
+    let activeView = '2D'; // '2D' or '3D'
+
+    // Room Color Palette
+    const ROOM_COLORS = {
+      waiting: { fill: '#083344', stroke: '#06b6d4', text: '#67e8f9' },
+      reception: { fill: '#172554', stroke: '#3b82f6', text: '#93c5fd' },
+      corridor: { fill: '#1e293b', stroke: '#475569', text: '#cbd5e1' },
+      exam: { fill: '#064e3b', stroke: '#10b981', text: '#6ee7b7' },
+      consult: { fill: '#042f2e', stroke: '#14b8a6', text: '#5eead4' },
+      procedure: { fill: '#311042', stroke: '#a855f7', text: '#d8b4fe' },
+      restroom: { fill: '#2e1065', stroke: '#8b5cf6', text: '#c4b5fd' },
+      clean_util: { fill: '#0c4a6e', stroke: '#0284c7', text: '#7dd3fc' },
+      soiled_util: { fill: '#451a03', stroke: '#d97706', text: '#fcd34d' },
+      staff_break: { fill: '#3b1219', stroke: '#f43f5e', text: '#fda4af' }
+    };
+
+    // 3D Scene globals
+    let scene, camera, renderer, controls;
+    let is3DInitialized = false;
+
+    // Detect WebGPU / WebGL2
+    async function initGpuDetection() {
+      const gpuBadge = document.getElementById('gpuBadge');
+      if (navigator.gpu) {
+        try {
+          const adapter = await navigator.gpu.requestAdapter();
+          if (adapter) {
+            gpuBadge.textContent = 'WebGPU Accelerated';
+            gpuBadge.style.color = '#34d399';
+            return;
+          }
+        } catch (e) {}
+      }
+      gpuBadge.textContent = 'WebGL2 Fallback';
+      gpuBadge.style.color = '#94a3b8';
+    }
+
+    // Initialize application
+    window.addEventListener('DOMContentLoaded', async () => {
+      await initGpuDetection();
+      setupEventListeners();
+      await fetchInitialSample();
+    });
+
+    function setupEventListeners() {
+      // Tab switching
+      document.getElementById('tab2D').addEventListener('click', () => switchTab('2D'));
+      document.getElementById('tab3D').addEventListener('click', () => switchTab('3D'));
+
+      // Generate button
+      document.getElementById('btnGenerate').addEventListener('click', generateClinic);
+
+      // Layer checkboxes
+      ['layerRooms', 'layerAda', 'layerPatient', 'layerStaff', 'layerEgress'].forEach(id => {
+        document.getElementById(id).addEventListener('change', render2DPlan);
+      });
+
+      // Export buttons
+      document.getElementById('btnExportJson').addEventListener('click', exportPlanJson);
+      document.getElementById('btnExportSvg').addEventListener('click', exportCadSvg);
+
+      // Preset selection
+      document.getElementById('briefPreset').addEventListener('change', (e) => {
+        const val = e.target.value;
+        const txt = document.getElementById('briefText');
+        const w = document.getElementById('buildingWidth');
+        const h = document.getElementById('buildingHeight');
+        if (val === 'preset_standard') {
+          txt.value = 'Primary care outpatient clinic with waiting area, reception desk, central circulation corridor, 3 standard exam rooms, ADA single-user restroom, staff breakroom, and clean/soiled utility support rooms.';
+          w.value = 16000;
+          h.value = 12000;
+        } else if (val === 'preset_specialty') {
+          txt.value = 'Specialty outpatient clinic requiring procedure room (>= 15 m2), consult room, 2 exam rooms, ADA restroom, clean utility, and central corridor.';
+          w.value = 18000;
+          h.value = 12000;
+        } else if (val === 'preset_infeasible') {
+          txt.value = 'Outpatient clinic packed with 5 large exam rooms and waiting area inside a tiny 5m x 5m building footprint.';
+          w.value = 5000;
+          h.value = 5000;
+        }
+      });
+
+      // Execution mode toggle (Local vs Cloud privacy badge)
+      document.getElementById('executionMode').addEventListener('change', (e) => {
+        const badge = document.getElementById('privacyBadge');
+        if (e.target.value === 'local') {
+          badge.className = 'badge-privacy';
+          badge.innerHTML = '<span>🔒</span> 100% Local Confidential (0% Leaks)';
+        } else {
+          badge.className = 'badge-privacy cloud';
+          badge.innerHTML = '<span>⚡</span> Cloud-Burst (Pinned CoreWeave/DeepInfra)';
+        }
+      });
+
+      // Inspector buttons
+      document.getElementById('btnEnlarge').addEventListener('click', () => editSelectedRoom(500, 500));
+      document.getElementById('btnShrink').addEventListener('click', () => editSelectedRoom(-500, -500));
+      document.getElementById('btnToggleLock').addEventListener('click', toggleSelectedRoomLock);
+    }
+
+    function switchTab(tab) {
+      activeView = tab;
+      document.getElementById('tab2D').classList.toggle('active', tab === '2D');
+      document.getElementById('tab3D').classList.toggle('active', tab === '3D');
+
+      const svg = document.getElementById('planSvg');
+      const threeC = document.getElementById('threeContainer');
+      if (tab === '2D') {
+        svg.style.display = 'block';
+        threeC.style.display = 'none';
+      } else {
+        svg.style.display = 'none';
+        threeC.style.display = 'block';
+        if (!is3DInitialized) {
+          init3D();
+        }
+        render3DPlan();
+      }
+    }
+
+    async function fetchInitialSample() {
+      try {
+        const res = await fetch('/api/sample');
+        currentPlan = await res.json();
+        render2DPlan();
+        updateValidationReport(currentPlan.validation);
+      } catch (e) {
+        console.error('Failed to load sample plan:', e);
+      }
+    }
+
+    async function generateClinic() {
+      const brief = document.getElementById('briefText').value;
+      const w = parseInt(document.getElementById('buildingWidth').value);
+      const h = parseInt(document.getElementById('buildingHeight').value);
+      const mode = document.getElementById('executionMode').value;
+      const maskingToggle = document.getElementById('geometricMaskingToggle');
+      const enableGeometricMasking = maskingToggle ? maskingToggle.checked : false;
+
+      document.getElementById('loadingOverlay').style.display = 'flex';
+      document.getElementById('conflictAlert').style.display = 'none';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brief,
+            boundary_w: w,
+            boundary_h: h,
+            mode,
+            num_candidates: 3,
+            enable_geometric_masking: enableGeometricMasking
+          })
+        });
+
+        const data = await res.json();
+        candidatesData = data.candidates || [];
+
+        renderCandidatesList();
+
+        if (candidatesData.length > 0) {
+          selectCandidate(0);
+        }
+      } catch (err) {
+        alert('Generation failed: ' + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    }
+
+    function exportPlanJson() {
+      if (!currentPlan) {
+        alert('No floorplan is currently loaded.');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentPlan, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `aegisplan_${currentPlan.plan_id || 'floorplan'}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function exportCadSvg() {
+      const svg = document.getElementById('planSvg');
+      if (!svg || !currentPlan) {
+        alert('No floorplan is currently rendered.');
+        return;
+      }
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svg);
+      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = svgUrl;
+      downloadAnchor.download = `aegisplan_${currentPlan.plan_id || 'floorplan'}.svg`;
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      URL.revokeObjectURL(svgUrl);
+    }
+
+    function renderCandidatesList() {
+      const list = document.getElementById('candidatesList');
+      list.innerHTML = '';
+
+      candidatesData.forEach((c, idx) => {
+        const card = document.createElement('div');
+        card.className = `candidate-card ${idx === 0 ? 'active' : ''}`;
+        card.onclick = () => selectCandidate(idx);
+
+        const statusColor = c.solver_status === 'OPTIMAL' ? 'var(--accent-emerald)' : 'var(--accent-amber)';
+
+        card.innerHTML = `
+          <div class="candidate-header">
+            <span class="rank-tag">RANK #${c.rank}</span>
+            <span style="font-size: 11px; font-weight: 600; color: ${statusColor};">${c.solver_status}</span>
+          </div>
+          <div class="candidate-metrics">
+            <div class="metric-item">Checks: <span>${c.checks_passed}/${c.total_checks}</span></div>
+            <div class="metric-item">Pre-Overlap: <span>${c.pre_repair_overlap_pct.toFixed(1)}%</span></div>
+            <div class="metric-item">Solve Time: <span>${c.solve_time_ms} ms</span></div>
+            <div class="metric-item">Max Egress: <span>${(c.travel_distance_mm / 1000).toFixed(1)} m</span></div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function selectCandidate(idx) {
+      document.querySelectorAll('.candidate-card').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+
+      const cand = candidatesData[idx];
+      currentPlan = cand.plan;
+      document.getElementById('telemetrySolveTime').textContent = `${cand.solve_time_ms} ms (OR-Tools)`;
+
+      // Check for infeasibility
+      if (cand.solver_status === 'INFEASIBLE') {
+        const alertBox = document.getElementById('conflictAlert');
+        const coreList = document.getElementById('conflictCoreList');
+        alertBox.style.display = 'flex';
+        coreList.innerHTML = (cand.plan.validation.conflict_core || []).map(c => `• ${c}`).join('<br>');
+      } else {
+        document.getElementById('conflictAlert').style.display = 'none';
+      }
+
+      render2DPlan();
+      if (activeView === '3D') {
+        render3DPlan();
+      }
+      updateValidationReport(currentPlan.validation);
+    }
+
+    function render2DPlan() {
+      if (!currentPlan) return;
+
+      const svg = document.getElementById('planSvg');
+      svg.innerHTML = '';
+
+      const b = currentPlan.boundary;
+      const bPoly = b.polygon;
+      const W = Math.max(...bPoly.map(p => p[0]));
+      const H = Math.max(...bPoly.map(p => p[1]));
+
+      const pad = 600;
+      svg.setAttribute('viewBox', `-${pad} -${pad} ${W + pad * 2} ${H + pad * 2}`);
+
+      // Defs (Gradients & Filters)
+      svg.innerHTML = `
+        <defs>
+          <pattern id="gridPattern" width="1000" height="1000" patternUnits="userSpaceOnUse">
+            <path d="M 1000 0 L 0 0 0 1000" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="15"/>
+            <path d="M 500 0 L 500 1000 M 0 500 L 1000 500" fill="none" stroke="rgba(255,255,255,0.015)" stroke-width="10"/>
+          </pattern>
+          <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="80" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+      `;
+
+      // 1. Grid Background
+      const gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      gridRect.setAttribute('x', '0');
+      gridRect.setAttribute('y', '0');
+      gridRect.setAttribute('width', W);
+      gridRect.setAttribute('height', H);
+      gridRect.setAttribute('fill', 'url(#gridPattern)');
+      gridRect.setAttribute('stroke', '#334155');
+      gridRect.setAttribute('stroke-width', '40');
+      svg.appendChild(gridRect);
+
+      const showRooms = document.getElementById('layerRooms').checked;
+      const showAda = document.getElementById('layerAda').checked;
+      const showPatient = document.getElementById('layerPatient').checked;
+      const showStaff = document.getElementById('layerStaff').checked;
+      const showEgress = document.getElementById('layerEgress').checked;
+
+      // 2. Render Rooms
+      if (showRooms) {
+        currentPlan.rooms.forEach(r => {
+          const col = ROOM_COLORS[r.type] || { fill: '#1e293b', stroke: '#64748b', text: '#cbd5e1' };
+          const bx = r.bbox.x;
+          const by = r.bbox.y;
+          const bw = r.bbox.w;
+          const bh = r.bbox.h;
+
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('class', 'room-group');
+          g.style.cursor = 'pointer';
+          g.onclick = () => selectRoom(r.id);
+
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', bx);
+          rect.setAttribute('y', by);
+          rect.setAttribute('width', bw);
+          rect.setAttribute('height', bh);
+          rect.setAttribute('fill', col.fill);
+          rect.setAttribute('stroke', r.id === selectedRoomId ? '#38bdf8' : col.stroke);
+          rect.setAttribute('stroke-width', r.id === selectedRoomId ? '80' : '30');
+          rect.setAttribute('rx', '20');
+          g.appendChild(rect);
+
+          // Room Text Label
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', bx + bw / 2);
+          text.setAttribute('y', by + bh / 2 - 80);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('fill', col.text);
+          text.setAttribute('font-size', '280');
+          text.setAttribute('font-weight', '600');
+          text.textContent = r.label;
+          g.appendChild(text);
+
+          // Room Area / Lock Subtext
+          const subtext = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          subtext.setAttribute('x', bx + bw / 2);
+          subtext.setAttribute('y', by + bh / 2 + 240);
+          subtext.setAttribute('text-anchor', 'middle');
+          subtext.setAttribute('fill', 'rgba(255,255,255,0.6)');
+          subtext.setAttribute('font-size', '200');
+          subtext.textContent = `${r.area_actual_m2} m² ${r.locked ? '🔒' : ''}`;
+          g.appendChild(subtext);
+
+          // ADA Turning Circle ($1525mm)
+          if (showAda && r.ada_turning_circle) {
+            const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circ.setAttribute('cx', r.ada_turning_circle.center[0]);
+            circ.setAttribute('cy', r.ada_turning_circle.center[1]);
+            circ.setAttribute('r', r.ada_turning_circle.diameter_mm / 2);
+            circ.setAttribute('fill', 'none');
+            circ.setAttribute('stroke', 'rgba(139, 92, 246, 0.45)');
+            circ.setAttribute('stroke-width', '25');
+            circ.setAttribute('stroke-dasharray', '80 50');
+            g.appendChild(circ);
+          }
+
+          svg.appendChild(g);
+        });
+      }
+
+      // 3. Render Doors & Openings
+      currentPlan.doors.forEach(d => {
+        const seg = d.segment;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', seg[0][0]);
+        line.setAttribute('y1', seg[0][1]);
+        line.setAttribute('x2', seg[1][0]);
+        line.setAttribute('y2', seg[1][1]);
+        line.setAttribute('stroke', '#ffffff');
+        line.setAttribute('stroke-width', '70');
+        line.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(line);
+
+        // Door Arc / Leaf Swing indicator
+        const arc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        arc.setAttribute('cx', d.position[0]);
+        arc.setAttribute('cy', d.position[1]);
+        arc.setAttribute('r', '80');
+        arc.setAttribute('fill', '#38bdf8');
+        svg.appendChild(arc);
+      });
+
+      // 4. Render Circulation Paths
+      const roomCenters = {};
+      currentPlan.rooms.forEach(r => {
+        roomCenters[r.id] = [r.bbox.x + r.bbox.w / 2, r.bbox.y + r.bbox.h / 2];
+      });
+      // OUTSIDE center
+      const outDoor = currentPlan.doors.find(d => d.connects.includes('OUTSIDE'));
+      roomCenters['OUTSIDE'] = outDoor ? [outDoor.position[0], outDoor.position[1]] : [0, 0];
+
+      const paths = currentPlan.topology.computed_paths;
+
+      // Patient Flow (Cyan Glowing Dashed)
+      if (showPatient && paths.patient_flow && paths.patient_flow.length > 1) {
+        drawPath(svg, paths.patient_flow, roomCenters, '#06b6d4', 'glowCyan', '120 70', 45);
+      }
+
+      // Staff Route (Emerald Dashed)
+      if (showStaff && paths.staff_route && paths.staff_route.length > 1) {
+        drawPath(svg, paths.staff_route, roomCenters, '#10b981', null, '100 60', 35);
+      }
+
+      // Egress Max Path (Crimson Dashed)
+      if (showEgress && paths.egress_max_path && paths.egress_max_path.rooms.length > 1) {
+        drawPath(svg, paths.egress_max_path.rooms, roomCenters, '#f43f5e', null, '80 50', 35);
+      }
+    }
+
+    function drawPath(svg, roomIds, centers, color, filterId, dash, width) {
+      const points = roomIds.map(id => centers[id]).filter(Boolean);
+      if (points.length < 2) return;
+
+      const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      polyline.setAttribute('points', points.map(p => `${p[0]},${p[1]}`).join(' '));
+      polyline.setAttribute('fill', 'none');
+      polyline.setAttribute('stroke', color);
+      polyline.setAttribute('stroke-width', width);
+      polyline.setAttribute('stroke-dasharray', dash);
+      polyline.setAttribute('stroke-linecap', 'round');
+      polyline.setAttribute('stroke-linejoin', 'round');
+      if (filterId) {
+        polyline.setAttribute('filter', `url(#${filterId})`);
+      }
+      svg.appendChild(polyline);
+    }
+
+    function selectRoom(roomId) {
+      selectedRoomId = roomId;
+      const room = currentPlan.rooms.find(r => r.id === roomId);
+      if (!room) return;
+
+      const inspector = document.getElementById('roomInspector');
+      inspector.style.display = 'flex';
+      document.getElementById('inspectRoomLabel').textContent = room.label;
+      document.getElementById('inspectDim').textContent = `${room.bbox.w} x ${room.bbox.h} mm`;
+      document.getElementById('inspectArea').textContent = `${room.area_actual_m2} m²`;
+
+      const lockBadge = document.getElementById('inspectLockBadge');
+      lockBadge.textContent = room.locked ? 'LOCKED' : 'FREE';
+      lockBadge.style.color = room.locked ? '#f59e0b' : '#94a3b8';
+
+      render2DPlan();
+    }
+
+    async function editSelectedRoom(dw, dh) {
+      if (!selectedRoomId || !currentPlan) return;
+
+      try {
+        const res = await fetch('/api/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            plan: currentPlan,
+            room_id: selectedRoomId,
+            delta_w: dw,
+            delta_h: dh
+          })
+        });
+        const data = await res.json();
+        currentPlan = data.plan;
+        selectRoom(selectedRoomId);
+        render2DPlan();
+        if (activeView === '3D') render3DPlan();
+        updateValidationReport(currentPlan.validation);
+      } catch (e) {
+        alert('Edit failed: ' + e.message);
+      }
+    }
+
+    async function toggleSelectedRoomLock() {
+      if (!selectedRoomId || !currentPlan) return;
+      const room = currentPlan.rooms.find(r => r.id === selectedRoomId);
+      if (!room) return;
+
+      try {
+        const res = await fetch('/api/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            plan: currentPlan,
+            room_id: selectedRoomId,
+            toggle_lock: !room.locked
+          })
+        });
+        const data = await res.json();
+        currentPlan = data.plan;
+        selectRoom(selectedRoomId);
+        render2DPlan();
+        if (activeView === '3D') render3DPlan();
+        updateValidationReport(currentPlan.validation);
+      } catch (e) {
+        alert('Lock toggle failed: ' + e.message);
+      }
+    }
+
+    function updateValidationReport(val) {
+      if (!val) return;
+
+      const checks = val.checks || [];
+      const passed = checks.filter(c => c.status === 'PASS').length;
+      document.getElementById('passedCount').textContent = passed;
+      document.getElementById('totalCount').textContent = `/ ${checks.length} Checks Passed`;
+      document.getElementById('summaryStatement').textContent = val.summary_statement || '';
+
+      const list = document.getElementById('ruleCardsList');
+      list.innerHTML = '';
+
+      checks.forEach(c => {
+        const card = document.createElement('div');
+        card.className = `rule-card ${c.status.toLowerCase()}`;
+        card.innerHTML = `
+          <div class="rule-head">
+            <span class="rule-id">${c.rule_id}</span>
+            <span class="rule-status ${c.status.toLowerCase()}">${c.status}</span>
+          </div>
+          <div class="rule-detail">${c.measured}</div>
+          <div class="rule-citation">${c.citation}</div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // 3D Three.js Walkthrough
+    function init3D() {
+      const container = document.getElementById('threeContainer');
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0d13);
+
+      camera = new THREE.PerspectiveCamera(45, w / h, 1, 100000);
+      camera.position.set(8000, 20000, 22000);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(w, h);
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.set(8000, 0, 6000);
+      controls.update();
+
+      // Lighting
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10000, 25000, 15000);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      is3DInitialized = true;
+
+      window.addEventListener('resize', () => {
+        if (!container.clientWidth) return;
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+
+      animate3D();
+    }
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      if (controls) controls.update();
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    function render3DPlan() {
+      if (!currentPlan || !is3DInitialized) return;
+
+      // Clear previous dynamic meshes
+      for (let i = scene.children.length - 1; i >= 0; i--) {
+        const obj = scene.children[i];
+        if (obj.isMesh || obj.isLine) {
+          scene.remove(obj);
+        }
+      }
+
+      const wallHeight = 2800; // standard 2.8m clinical ceiling height
+
+      // Extrude Room Floors
+      currentPlan.rooms.forEach(r => {
+        const col = ROOM_COLORS[r.type] || { stroke: '#475569' };
+        const geo = new THREE.BoxGeometry(r.bbox.w, 40, r.bbox.h);
+        const mat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(col.stroke),
+          roughness: 0.4,
+          metalness: 0.1
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(r.bbox.x + r.bbox.w / 2, 20, r.bbox.y + r.bbox.h / 2);
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      });
+
+      // Extrude Walls with Openings
+      const wallMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        roughness: 0.8,
+        metalness: 0.05
+      });
+
+      currentPlan.walls.forEach(w => {
+        const p1 = w.start;
+        const p2 = w.end;
+        const dx = p2[0] - p1[0];
+        const dy = p2[1] - p1[1];
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const thick = w.thickness_mm || 100;
+
+        // Skip 0 length
+        if (len < 50) return;
+
+        const wallGeo = new THREE.BoxGeometry(thick, wallHeight, len);
+        const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+
+        const midX = (p1[0] + p2[0]) / 2;
+        const midZ = (p1[1] + p2[1]) / 2;
+        wallMesh.position.set(midX, wallHeight / 2, midZ);
+
+        const angle = Math.atan2(dx, dy);
+        wallMesh.rotation.y = angle;
+        wallMesh.castShadow = true;
+        scene.add(wallMesh);
+      });
+
+      // Draw Glowing 3D Circulation Path Ribbons
+      const roomCenters = {};
+      currentPlan.rooms.forEach(r => {
+        roomCenters[r.id] = new THREE.Vector3(r.bbox.x + r.bbox.w / 2, 80, r.bbox.y + r.bbox.h / 2);
+      });
+      const outDoor = currentPlan.doors.find(d => d.connects.includes('OUTSIDE'));
+      roomCenters['OUTSIDE'] = outDoor
+        ? new THREE.Vector3(outDoor.position[0], 80, outDoor.position[1])
+        : new THREE.Vector3(0, 80, 0);
+
+      const paths = currentPlan.topology.computed_paths;
+      if (paths.patient_flow && paths.patient_flow.length > 1) {
+        const pts = paths.patient_flow.map(id => roomCenters[id]).filter(Boolean);
+        const curve = new THREE.CatmullRomCurve3(pts);
+        const tubeGeo = new THREE.TubeGeometry(curve, 64, 40, 8, false);
+        const tubeMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+        scene.add(new THREE.Mesh(tubeGeo, tubeMat));
+      }
+    }
+  </script>
+</body>
+</html>

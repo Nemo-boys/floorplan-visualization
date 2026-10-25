@@ -106,13 +106,13 @@ Status key: ✅ done · 🔜 next · ⏳ planned
   - `viz/tests/unit/aegis-fixtures.test.ts`: generated plans load with their own doors, reach every room, pass the viewer checks and simulate a day.
   - Fixtures are made by `aegis/scripts/export_viz_fixtures.py`.
 
-### Step 2: Close the grammar gaps 🔜
+### Step 2: Close the grammar gaps ✅ (Oct 25)
 
 - Add `nurse_station`, `lab` and `storage` to the FML grammar, the parser, the CP-SAT size table (`cpsat_repair.py:85-133`), the synthetic generator and the few-shot exemplar.
 - Then the generated clinics staff and simulate properly.
 - Add a viz fixture with a nurse station, and assert that `nurseLabel` is not "Corridor".
 
-### Step 3: Live pipeline ⏳
+### Step 3: Live pipeline ✅ (Oct 25)
 
 - `POST /api/pipeline {brief, boundary_w, boundary_h, locked_rooms, domain}` runs generate (Best-of-3), validate and repair, and returns 3 viz plans.
 - FastAPI serves `viz/dist`.
@@ -121,7 +121,7 @@ Status key: ✅ done · 🔜 next · ⏳ planned
   - Add a small brief form.
 - The Aegis checks fill `state.checks` and call `renderChecks()`, replacing the 5 example checks. That makes Module 2 real.
 
-### Step 4: Close the loop ⏳
+### Step 4: Close the loop 🔜
 
 This is the strongest part of the demo.
 
@@ -156,11 +156,36 @@ See [docs/DATACENTER.md](docs/DATACENTER.md).
 - Full viz suite: `npm run check`, `npm run test:e2e`, `npm run test:visual` (about 20 minutes).
 - Record the demo, finish the README, submit.
 
+### Generation as built (Oct 25), and why
+
+The fine-tuned GGUF (`VenuArvind/aegisplan-nemotron-nano-9b-gguf`, Q4_K_M) was tested with the exact fine-tuning prompts on test-split briefs.
+
+- **Without a grammar, it does not follow the training format.** It writes `R1 TYPE EXAM ROOM`, chains doors room to room and leaves out the corridor, unlike every training target. Its own chat template also turns reasoning on, which uses up the token budget; `/no_think` fixes that.
+- **With grammar-constrained decoding** (`aegisplan/fml_grammar.py`, GBNF in llama.cpp), every line is valid FML with the right types and ids. The **room program** is reliable (6 exam rooms, nurse station, utilities). The **geometry** is not: room sizes and positions don't fit the site, and the corridor sometimes runs 18.3 m wide.
+- So the pipeline is **program-first**, which is the research brief's split:
+  1. Nemotron (grammar-constrained) writes the room program.
+  2. The program is merged with the brief: named rooms are kept and stated counts win.
+  3. `aegisplan/program.py` lays the program out on a double-loaded corridor in 3 entrance variants.
+  4. CP-SAT repairs and the validator ranks.
+- Without a model, a brief parser supplies the program.
+- Timing: about 47 s per request on an M4 Pro. Metal runs all layers (`AEGISPLAN_GPU_LAYERS=-1`, the default now), which is about 1.3× faster than CPU. The time is mostly the model writing room lines.
+- The simulator separates the variants, averaged over 5 simulated days:
+
+  | Scenario | West entrance | Centre entrance | East entrance |
+  |---|---|---|---|
+  | Flu-season Monday: average wait | 13.4 min | 11.5 min | 14.6 min |
+  | Nurse walking per day (flu) | 2.0 km | 1.4 km | 1.4 km |
+
+- Fixed on the way:
+  - The egress check measured to the site corner instead of the exit door, which failed sound plans.
+  - The fallback templates ignored the boundary.
+  - Tests now never load the model (`AEGISPLAN_DISABLE_MODEL`).
+
 ## 5. Schedule
 
 | Day | Clinic (must ship) | Datacenter (on top, never blocking) |
 |---|---|---|
-| Sun Oct 25 | ✅ Steps 0–1 · plan docs | ✅ Datacenter design doc |
+| Sun Oct 25 | ✅ Steps 0–3 · plan docs · real Nemotron + grammar + layout synthesizer | ✅ Datacenter design doc |
 | Mon Oct 26 | Steps 2–3 | Domain-pack refactor (clinic unchanged); datacenter template generator |
 | Tue Oct 27 | Step 4 · **freeze Step 5** | Rack placer; datacenter validator rules |
 | Wed Oct 28 | Bug fixes only | Datacenter 3D models, overlays, failure-scenario simulation |

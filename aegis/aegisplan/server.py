@@ -13,6 +13,11 @@ from aegisplan.fml_parser import parse_fml, serialize_to_fml
 from aegisplan.validator import validate_plan
 from aegisplan.cpsat_repair import repair_plan
 from aegisplan.router import GenerationRouter, FEW_SHOT_EXEMPLAR
+from aegisplan.export_viz import to_viz_plan
+from aegisplan.gguf_engine import find_gguf_model_path
+
+# The viewer's production build (viz/dist), served at / when it exists.
+VIZ_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "viz", "dist"))
 
 app = FastAPI(
     title="AegisPlan API",
@@ -58,11 +63,21 @@ class EditRoomRequest(BaseModel):
 
 @app.get("/api/health")
 async def health():
+    model_path = find_gguf_model_path()
+    try:
+        import llama_cpp  # noqa: F401
+        has_llama = True
+    except ImportError:
+        has_llama = False
     return {
         "status": "healthy",
         "service": "AegisPlan",
         "version": "0.1.0",
-        "engine": "CP-SAT + Nemotron 3.5 Lightning",
+        "engine": "CP-SAT + Nemotron Nano 9B v2 (fine-tuned)",
+        "model": {
+            "gguf": os.path.basename(model_path) if model_path else None,
+            "available": bool(model_path and has_llama),
+        },
     }
 
 
@@ -112,6 +127,46 @@ async def generate_plans(req: GenerateRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/pipeline")
+async def pipeline(req: GenerateRequest):
+    """Brief to ranked, validated and repaired candidates in the viewer's plan.json v0.1 format."""
+    try:
+        candidates = await router.generate_candidates(
+            brief=req.brief,
+            boundary_w=req.boundary_w,
+            boundary_h=req.boundary_h,
+            locked_rooms=req.locked_rooms,
+            mode=req.mode,
+            num_candidates=req.num_candidates,
+            enable_geometric_masking=req.enable_geometric_masking,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    out = []
+    for c in candidates:
+        viz = to_viz_plan(
+            c.repaired_plan,
+            name=f"Candidate {c.rank}",
+            blurb=f"{c.checks_passed} of {c.total_checks} checks pass, {c.solver_status.lower()} after repair",
+        )
+        viz["provenance"].update({"brief": req.brief, "source": c.source, "rank": c.rank})
+        out.append({
+            "rank": c.rank,
+            "source": c.source,
+            "solver_status": c.solver_status,
+            "solve_time_ms": c.solve_time_ms,
+            "checks_passed": c.checks_passed,
+            "total_checks": c.total_checks,
+            "pre_repair_overlap_pct": c.pre_repair_overlap_pct,
+            "travel_distance_mm": c.travel_distance_mm,
+            "raw_fml": c.raw_fml,
+            "plan": c.repaired_plan,
+            "viz_plan": viz,
+        })
+    return {"mode": req.mode, "candidates": out}
 
 
 @app.post("/api/validate")
@@ -182,8 +237,8 @@ if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-@app.get("/")
-async def root():
+@app.get("/aegis")
+async def aegis_ui():
     index_file = os.path.join(static_dir, "index.html")
     if os.path.exists(index_file):
         with open(index_file, "r", encoding="utf-8") as f:
@@ -196,3 +251,10 @@ async def root():
                 },
             )
     return HTMLResponse("<h1>AegisPlan API running</h1>")
+
+
+if os.path.isdir(VIZ_DIST):
+    # Registered last so the API routes above win.
+    app.mount("/", StaticFiles(directory=VIZ_DIST, html=True), name="viz")
+else:
+    app.add_api_route("/", aegis_ui, methods=["GET"])

@@ -18,6 +18,10 @@ _GLOBAL_GGUF_ENGINE: Optional["GGUFInferenceEngine"] = None
 
 def find_gguf_model_path() -> Optional[str]:
     """Locate the best available GGUF model file."""
+    # Tests and offline demos can force the fallback path.
+    if os.environ.get("AEGISPLAN_DISABLE_MODEL"):
+        return None
+
     # 1. Environment variable override
     env_path = os.environ.get("AEGISPLAN_GGUF_PATH")
     if env_path and os.path.exists(env_path):

@@ -102,6 +102,7 @@ class CandidateEvaluation:
         solver_status: str,
         solve_time_ms: int,
         rank: int = 0,
+        source: str = "nemotron",
     ):
         self.candidate_idx = candidate_idx
         self.raw_fml = raw_fml
@@ -114,6 +115,7 @@ class CandidateEvaluation:
         self.solver_status = solver_status
         self.solve_time_ms = solve_time_ms
         self.rank = rank
+        self.source = source  # "nemotron" or "fallback" (heuristic template)
 
 
 class GenerationRouter:
@@ -137,6 +139,7 @@ class GenerationRouter:
     ) -> List[CandidateEvaluation]:
         """Generate parallel candidates, repair with CP-SAT, and rank lexicographically."""
         raw_candidates_fml: List[str] = []
+        self._fallback_fml = set()
 
         if mode == "cloud" and self.openrouter_api_key:
             raw_candidates_fml = await self._call_openrouter(
@@ -275,6 +278,7 @@ class GenerationRouter:
                         travel_distance_mm=travel_dist,
                         solver_status=repair_res.status,
                         solve_time_ms=repair_res.solve_time_ms,
+                        source="fallback" if fml_text in self._fallback_fml else "nemotron",
                     )
                 )
             except Exception as e:
@@ -306,6 +310,7 @@ class GenerationRouter:
                             travel_distance_mm=travel_dist,
                             solver_status=repair_res.status,
                             solve_time_ms=repair_res.solve_time_ms,
+                            source="fallback",
                         )
                     )
                 except Exception as ex:
@@ -503,4 +508,9 @@ FDOOR door_9 CONNECT waiting_1 OUTSIDE AT 2500 0 WIDTH 1220
 END_PLAN"""
         candidates.append(c3)
 
-        return [_fit_to_boundary(c, w, h) for c in candidates[:n]]
+        fitted = [_fit_to_boundary(c, w, h) for c in candidates[:n]]
+        # Remember which candidates are templates, so results can say they were not generated.
+        if not hasattr(self, "_fallback_fml"):
+            self._fallback_fml = set()
+        self._fallback_fml.update(fitted)
+        return fitted

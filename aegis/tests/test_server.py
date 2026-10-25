@@ -67,5 +67,27 @@ def test_interactive_edit_endpoint():
 def test_root_serves_html():
     resp = client.get("/")
     assert resp.status_code == 200
+    assert "<!doctype html>" in resp.text.lower()
+
+
+def test_aegis_ui_serves_html():
+    resp = client.get("/aegis")
+    assert resp.status_code == 200
     assert "<!DOCTYPE html>" in resp.text
     assert "AegisPlan" in resp.text
+
+
+def test_pipeline_returns_viewer_plans():
+    resp = client.post(
+        "/api/pipeline",
+        json={"brief": "Primary care clinic", "boundary_w": 24000, "boundary_h": 14000, "num_candidates": 3},
+    )
+    assert resp.status_code == 200
+    cands = resp.json()["candidates"]
+    assert [c["rank"] for c in cands] == [1, 2, 3]
+    for c in cands:
+        viz = c["viz_plan"]
+        assert c["source"] in ("nemotron", "fallback")
+        assert viz["schema_version"] == "0.1"
+        assert viz["footprint"] == {"width_mm": 24000, "depth_mm": 14000}
+        assert viz["checks"] and viz["provenance"]["brief"] == "Primary care clinic"

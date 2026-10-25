@@ -156,7 +156,7 @@ def parse_fml(text: str, plan_id: str = "clinic_candidate_1") -> PlanDocument:
     walls, shares_wall, connected_by_door = _compute_walls_and_topology(rooms, doors, boundary_w, boundary_h)
 
     # Compute circulation paths
-    computed_paths = _compute_circulation_paths(rooms, connected_by_door)
+    computed_paths = _compute_circulation_paths(rooms, connected_by_door, doors)
 
     topology = Topology(
         shares_wall=shares_wall,
@@ -322,7 +322,9 @@ def _compute_walls_and_topology(
     return walls_list, shares_wall, connected_by_door
 
 
-def _compute_circulation_paths(rooms: List[Room], connected_by_door: List[List[str]]) -> ComputedPaths:
+def _compute_circulation_paths(
+    rooms: List[Room], connected_by_door: List[List[str]], doors: Optional[List[Door]] = None
+) -> ComputedPaths:
     """Precompute patient_flow, staff_route, and egress_max_path via graph BFS."""
     G = nx.Graph()
     for pair in connected_by_door:
@@ -358,10 +360,14 @@ def _compute_circulation_paths(rooms: List[Room], connected_by_door: List[List[s
         except nx.NetworkXNoPath:
             staff_route = []
 
-    # 3. Egress Max Path: room with maximum Manhattan travel distance to OUTSIDE
+    # 3. Egress Max Path: room with maximum Manhattan travel distance to OUTSIDE.
+    # The route runs from the room's center through the door between each pair of rooms on the
+    # path and ends at the exit door. Without doors it falls back to room centers.
     room_centers = {r.id: (r.bbox.x + r.bbox.w / 2, r.bbox.y + r.bbox.h / 2) for r in rooms}
-    # For OUTSIDE, pick exit door position or fallback to center (0, 0)
-    out_pos = (0.0, 0.0)
+    door_at = {}
+    for d in doors or []:
+        if len(d.connects) == 2:
+            door_at[frozenset(d.connects)] = (float(d.position[0]), float(d.position[1]))
 
     egress_max_path: Optional[EgressMaxPath] = None
     if "OUTSIDE" in G:
@@ -371,12 +377,16 @@ def _compute_circulation_paths(rooms: List[Room], connected_by_door: List[List[s
             if r.id in G:
                 try:
                     path = nx.shortest_path(G, source=r.id, target="OUTSIDE")
-                    # Compute Manhattan distance along room centers in path
-                    dist = 0.0
-                    for k in range(len(path) - 1):
-                        p_a = room_centers.get(path[k], out_pos)
-                        p_b = room_centers.get(path[k + 1], out_pos)
-                        dist += abs(p_a[0] - p_b[0]) + abs(p_a[1] - p_b[1])
+                    if door_at:
+                        points = [room_centers[path[0]]] + [
+                            door_at.get(frozenset(path[k:k + 2]), room_centers.get(path[k + 1], (0.0, 0.0)))
+                            for k in range(len(path) - 1)
+                        ]
+                    else:
+                        points = [room_centers.get(rid, (0.0, 0.0)) for rid in path]
+                    dist = sum(
+                        abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in zip(points, points[1:])
+                    )
                     if dist > max_dist:
                         max_dist = dist
                         worst_path = path

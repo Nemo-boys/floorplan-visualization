@@ -271,7 +271,7 @@ def repair_plan(
         walls, shares_wall, connected_by_door = _compute_walls_and_topology(
             repaired_rooms, repaired_doors, b_w, b_h
         )
-        paths = _compute_circulation_paths(repaired_rooms, connected_by_door)
+        paths = _compute_circulation_paths(repaired_rooms, connected_by_door, repaired_doors)
 
         plan.rooms = repaired_rooms
         plan.doors = repaired_doors

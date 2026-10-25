@@ -91,7 +91,7 @@ def repair_plan(
         elif r.type == "restroom":
             min_w = 22  # 2200mm >= 2150mm
             min_h = 22
-        elif r.type in {"consult", "staff_break"}:
+        elif r.type in {"consult", "staff_break", "nurse_station", "lab"}:
             min_w = 20  # 2000mm
             min_h = 20
         else:

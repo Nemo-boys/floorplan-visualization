@@ -79,8 +79,8 @@ def parse_fml(text: str, plan_id: str = "clinic_candidate_1") -> PlanDocument:
 
             # Generate pretty label, e.g. "exam_1" -> "Exam Room 1"
             parts = r_id.split("_")
-            base_name = parts[0].capitalize()
-            num = parts[1] if len(parts) > 1 else ""
+            num = parts[-1] if len(parts) > 1 and parts[-1].isdigit() else ""
+            base_name = " ".join(parts[:-1] if num else parts).capitalize()
             label = f"{base_name} {num}".strip()
             if r_type == "exam":
                 label = f"Exam Room {num}".strip()

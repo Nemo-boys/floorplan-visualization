@@ -8,9 +8,9 @@ door_block ::= "DOOR " door_id " CONNECT " room_id " " room_id " AT " coord_mm "
 
 fdoor_block ::= "FDOOR " door_id " CONNECT " room_id " OUTSIDE AT " coord_mm " " coord_mm " WIDTH " door_w "\n"
 
-room_type ::= "waiting" | "reception" | "corridor" | "exam" | "consult" | "procedure" | "restroom" | "clean_util" | "soiled_util" | "staff_break" | "bedroom" | "bathroom" | "kitchen" | "living"
+room_type ::= "waiting" | "reception" | "corridor" | "exam" | "consult" | "procedure" | "restroom" | "clean_util" | "soiled_util" | "staff_break" | "nurse_station" | "lab" | "storage" | "bedroom" | "bathroom" | "kitchen" | "living"
 
-room_id ::= [a-z]+ "_" [1-9][0-9]?
+room_id ::= [a-z]+ ("_" [a-z]+)* "_" [1-9][0-9]?
 door_id ::= "door_" [1-9][0-9]?
 lock_flag ::= "LOCKED" | "FREE"
 

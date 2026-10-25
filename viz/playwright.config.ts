@@ -18,5 +18,5 @@ export default defineConfig({
         url: 'http://localhost:5174/reference.html',
         reuseExistingServer: true
       }
-    : { command: 'npx vite', url: 'http://localhost:5173/', reuseExistingServer: true }
+    : { command: 'FI_OFFLINE=1 npx vite', url: 'http://localhost:5173/', reuseExistingServer: true }
 });

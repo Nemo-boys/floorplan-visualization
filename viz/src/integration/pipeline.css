@@ -1,0 +1,8 @@
+/* Live Module 1 pipeline form on the Import step. Kept out of src/styles, which must match the design exactly. */
+.pipeform { display: grid; gap: 10px; margin-bottom: 10px; }
+.pipeform textarea, .pipeform input[type="number"] { width: 100%; background: var(--field); border: 1px solid var(--rule-2); border-radius: 8px; padding: 6px 8px; font-size: 13.5px; }
+.pipeform textarea { resize: vertical; min-height: 64px; }
+.pipedims { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pipeform .btn { justify-self: start; }
+.pipelist { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 8px; }
+.pipelist .inbox { margin: 0; }

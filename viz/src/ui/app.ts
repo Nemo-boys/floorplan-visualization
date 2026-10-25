@@ -25,6 +25,7 @@ import { STEPS, is2DVisible, is3DVisible, moveGlider, setStep } from './stepper'
 import { applyTheme } from './theme';
 import { dayDone, dayRange, drawTimeline, resetSim, seek, updateLive, updateTransport } from './transport';
 import { importPlan } from './versions';
+import { initPipeline } from './pipeline';
 
 export function bindUI(): void {
   document
@@ -318,6 +319,7 @@ export async function init(): Promise<void> {
   const three = initThree();
   renderSampleThumbs();
   bindUI();
+  void initPipeline();
   initSimulate();
   await three;
   rendererNote();

@@ -1,5 +1,5 @@
 /* ---------- Results, and the plan checks shown with them ---------- */
-import { fmtClock, fmtMin, type Spread } from '../../engine';
+import { fmtClock, fmtMin, pipelineChecks, type Spread } from '../../engine';
 import { state } from '../../state';
 import { runCompare } from '../compare';
 import { $, esc } from '../dom';
@@ -162,8 +162,15 @@ export function renderResults(): void {
 export function renderChecks(): void {
   const box = document.querySelector<HTMLElement>('#checks');
   if (!box) return;
-  const pass = state.checks.filter(c => c.pass).length;
-  $('#checksSummary').textContent = pass + ' of ' + state.checks.length + ' example checks pass';
+  const pass = state.checks.filter(c => c.pass).length,
+    fromPipeline = !!pipelineChecks(state.json);
+  $('#checksSummary').textContent =
+    pass + ' of ' + state.checks.length + (fromPipeline ? ' checks pass' : ' example checks pass');
+  const note = document.querySelector<HTMLElement>('details.planchecks > p');
+  if (note)
+    note.textContent = fromPipeline
+      ? 'From the AegisPlan rule checker. Only these implemented checks were evaluated.'
+      : 'Example checks until Module 2 connects with the full U.S. rule set.';
   box.innerHTML = state.checks
     .map(
       c =>

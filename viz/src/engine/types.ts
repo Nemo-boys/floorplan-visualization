@@ -37,6 +37,7 @@ export interface PlanJsonFurniture {
 }
 export interface PlanJsonCheck {
   rule: string;
+  label?: string;
   pass: boolean;
   detail: string;
   source: string;

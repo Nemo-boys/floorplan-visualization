@@ -1,5 +1,14 @@
 /* ---------- Versions: every change is saved so it can be compared and undone ---------- */
-import { SAMPLE_SPECS, clamp, makePlanFromSpec, preparePlan, runChecks, type FurnItem, type PlanJson } from '../engine';
+import {
+  SAMPLE_SPECS,
+  clamp,
+  makePlanFromSpec,
+  pipelineChecks,
+  preparePlan,
+  runChecks,
+  type FurnItem,
+  type PlanJson
+} from '../engine';
 import { state, type PlanSource, type Version } from '../state';
 import { R3 } from '../view3d/r3';
 import { tour } from '../view3d/tour';
@@ -43,7 +52,7 @@ export function applyVersion(v: Version, keepCamera?: boolean): void {
   state.spec = v.spec;
   state.placed = v.placed.map(clonePlaced);
   state.P = preparePlan(state.json, state.placed);
-  state.checks = runChecks(state.P);
+  state.checks = pipelineChecks(state.json) || runChecks(state.P);
   state.compare = null;
   state.exportMetrics = null;
   stopPlacing();
@@ -105,7 +114,7 @@ export function afterFurnitureChange(it: FurnItem, how: string): void {
     state.versions = state.versions.slice(0, state.vIndex + 1).concat([nv]);
     state.vIndex = state.versions.length - 1;
   } else cur.placed = state.placed.map(clonePlaced);
-  state.checks = runChecks(state.P as NonNullable<typeof state.P>);
+  state.checks = pipelineChecks(state.json) || runChecks(state.P as NonNullable<typeof state.P>);
   state.exportMetrics = null;
   renderVersions();
   renderPlan2D();
@@ -113,10 +122,25 @@ export function afterFurnitureChange(it: FurnItem, how: string): void {
   updatePlanHeader();
 }
 export type ImportSource =
-  { kind: 'file'; json: PlanJson; file?: string } | { kind: 'pipeline' | 'sample'; key: string };
+  | { kind: 'file'; json: PlanJson; file?: string }
+  | { kind: 'pipeline' | 'sample'; key: string }
+  | { kind: 'generated'; json: PlanJson };
 export function importPlan(src: ImportSource): void {
   let v: Version;
-  if (src.kind === 'file')
+  if (src.kind === 'generated')
+    v = {
+      n: 1,
+      change: 'Received from Module 1',
+      spec: null,
+      baseJson: src.json,
+      renames: {},
+      placed: [],
+      name: src.json.name || 'Generated plan',
+      blurb: src.json.blurb || '',
+      source: 'pipeline',
+      at: new Date()
+    };
+  else if (src.kind === 'file')
     v = {
       n: 1,
       change: 'Uploaded ' + (src.file || 'plan.json'),

@@ -1,4 +1,5 @@
 import './styles';
+import './integration/pipeline.css';
 import { init } from './ui/app';
 import { exposeTestHooks } from './ui/test-hooks';
 

@@ -1,5 +1,11 @@
 /* Example U.S. checks computed from the plan. Module 2 will supply the real, complete rule set. */
-import type { Check, PreparedPlan } from './types';
+import type { Check, PlanJson, PreparedPlan } from './types';
+
+/* The checks a plan brought from the AegisPlan pipeline (its rule checker), or null for any other plan. */
+export function pipelineChecks(json: PlanJson | null): Check[] | null {
+  if (!json || json.provenance?.generator !== 'aegisplan' || !json.checks?.length) return null;
+  return json.checks.map(c => ({ id: c.rule, label: c.label || c.rule, pass: c.pass, detail: c.detail, source: c.source }));
+}
 
 export function runChecks(P: PreparedPlan): Check[] {
   const m = P.m,

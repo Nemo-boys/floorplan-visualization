@@ -1,0 +1,235 @@
+{
+  "about": "validateScenario on layout A for every sample scenario, and compileScenario when there are no errors.",
+  "scenarios": {
+    "normal-tuesday": {
+      "problems": [],
+      "compiled": {
+        "opens": 0,
+        "closes": 600,
+        "patients": 57,
+        "providers": 3,
+        "nurses": 2,
+        "receptionists": 1,
+        "breaks": 2,
+        "outs": 0,
+        "closures": 0,
+        "rules": [],
+        "visit_types": [
+          "Quick follow-up 0.25",
+          "Standard visit 0.6",
+          "Long visit 0.15"
+        ],
+        "days": 20,
+        "seed": 42
+      }
+    },
+    "flu-season-monday": {
+      "problems": [],
+      "compiled": {
+        "opens": 0,
+        "closes": 600,
+        "patients": 90,
+        "providers": 3,
+        "nurses": 2,
+        "receptionists": 1,
+        "breaks": 1,
+        "outs": 0,
+        "closures": 0,
+        "rules": [
+          "When the line at reception is more than 3 for 10 min, call in 1 receptionist for 240 min"
+        ],
+        "visit_types": [
+          "Flu check 0.45",
+          "Standard visit 0.45",
+          "Long visit 0.1"
+        ],
+        "days": 20,
+        "seed": 42
+      }
+    },
+    "short-staffed-day": {
+      "problems": [],
+      "compiled": {
+        "opens": 0,
+        "closes": 600,
+        "patients": 48,
+        "providers": 2,
+        "nurses": 1,
+        "receptionists": 1,
+        "breaks": 1,
+        "outs": 1,
+        "closures": 0,
+        "rules": [],
+        "visit_types": [
+          "Standard visit 0.8",
+          "Long visit 0.2"
+        ],
+        "days": 20,
+        "seed": 42
+      }
+    },
+    "custom-starter": {
+      "problems": [
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No provider is on shift. Add a “Staff shift” for providers."
+        },
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No nurse is on shift. Add a “Staff shift” for nurses."
+        },
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No receptionist is on shift. Add a “Staff shift” for receptionists."
+        },
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No patients arrive. Add appointments, walk-ins or a group arrival."
+        },
+        {
+          "level": "warning",
+          "block": null,
+          "field": null,
+          "msg": "No visit types, so every visit takes 12–26 minutes with the provider."
+        }
+      ],
+      "compiled": null
+    },
+    "every-block-type": {
+      "problems": [],
+      "compiled": {
+        "opens": 0,
+        "closes": 600,
+        "patients": 87,
+        "providers": 3,
+        "nurses": 2,
+        "receptionists": 2,
+        "breaks": 1,
+        "outs": 1,
+        "closures": 1,
+        "rules": [
+          "When the line at reception is more than 4 for 5 min, stop taking walk-ins for 60 min"
+        ],
+        "visit_types": [
+          "Standard visit 0.7",
+          "Long visit 0.3"
+        ],
+        "days": 20,
+        "seed": 42
+      }
+    },
+    "broken-on-purpose": {
+      "problems": [
+        {
+          "level": "error",
+          "block": "x4",
+          "field": "count",
+          "msg": "Staff shift, how many: at least 1."
+        },
+        {
+          "level": "error",
+          "block": "x5",
+          "field": "name",
+          "msg": "Visit type, name: enter a name."
+        },
+        {
+          "level": "error",
+          "block": "x5",
+          "field": "provider_min",
+          "msg": "Visit type, provider time (min): the first number should be the smaller one."
+        },
+        {
+          "level": "error",
+          "block": "x4",
+          "field": "to",
+          "msg": "Staff shift: the end time must be after the start time."
+        },
+        {
+          "level": "warning",
+          "block": "x4",
+          "field": null,
+          "msg": "Staff shift goes outside opening hours."
+        },
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No provider is on shift. Add a “Staff shift” for providers."
+        },
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No nurse is on shift. Add a “Staff shift” for nurses."
+        },
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No receptionist is on shift. Add a “Staff shift” for receptionists."
+        },
+        {
+          "level": "error",
+          "block": null,
+          "field": null,
+          "msg": "No patients arrive. Add appointments, walk-ins or a group arrival."
+        },
+        {
+          "level": "warning",
+          "block": "x5",
+          "field": null,
+          "msg": "Visit type shares add up to 40%. They’ll be scaled to 100%."
+        },
+        {
+          "level": "error",
+          "block": "x6",
+          "field": "room",
+          "msg": "Room closed: pick a room."
+        }
+      ],
+      "compiled": null
+    },
+    "providers-leave-early": {
+      "problems": [
+        {
+          "level": "warning",
+          "block": "l3",
+          "field": null,
+          "msg": "Patients keep arriving until 5:00 pm, but the last provider leaves at 4:00 pm. Anyone still waiting then won’t be seen."
+        }
+      ],
+      "compiled": {
+        "opens": 0,
+        "closes": 600,
+        "patients": 57,
+        "providers": 3,
+        "nurses": 2,
+        "receptionists": 1,
+        "breaks": 2,
+        "outs": 0,
+        "closures": 0,
+        "rules": [],
+        "visit_types": [
+          "Quick follow-up 0.25",
+          "Standard visit 0.6",
+          "Long visit 0.15"
+        ],
+        "days": 20,
+        "seed": 42
+      }
+    }
+  },
+  "overrides_normal_patients90_nurses3": {
+    "patients": 86,
+    "nurses": 3,
+    "providers": 3
+  }
+}

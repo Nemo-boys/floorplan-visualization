@@ -1,0 +1,66 @@
+/* Review stage: the 3D view fills it; the floor plan is a collapsible glass panel inside it */
+.stage { position: relative; min-width: 0; min-height: 0; }
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; flex: 1 1 auto; }
+.iconbtn.sm { width: 28px; height: 28px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ink-2); }
+.iconbtn.sm:hover { border-color: var(--rule-2); color: var(--ink); }
+.iconbtn.sm svg { width: 16px; height: 16px; }
+.liquid {
+  --spring: cubic-bezier(.3, 1.3, .5, 1);
+  background: var(--glass);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.22) 55%, rgba(255, 255, 255, 0.38)), color-mix(in srgb, var(--panel) 58%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.7); backdrop-filter: blur(20px) saturate(1.7);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 32px rgba(20, 30, 40, 0.18), 0 2px 6px rgba(20, 30, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .liquid { background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0.08)), color-mix(in srgb, var(--panel) 70%, transparent); border-color: rgba(255, 255, 255, 0.16); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18); } }
+:root[data-theme="dark"] .liquid { background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0.08)), color-mix(in srgb, var(--panel) 70%, transparent); border-color: rgba(255, 255, 255, 0.16); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.plandock { position: absolute; z-index: 4; width: 190px; height: 50px; border-radius: 25px; overflow: hidden; touch-action: none;
+  transition: width 560ms var(--spring), height 560ms var(--spring), border-radius 560ms var(--spring), box-shadow 300ms ease; }
+.plandock[data-open="true"] { width: var(--pd-w, 440px); height: var(--pd-h, 300px); border-radius: 20px; }
+.plandock[data-corner="br"] { right: 12px; bottom: 12px; }
+.plandock[data-corner="bl"] { left: 12px; bottom: 12px; }
+.plandock[data-corner="tr"] { right: 56px; top: 12px; }
+.plandock[data-corner="tl"] { left: 12px; top: 58px; }
+.plandock.dragging { transition: none; cursor: grabbing; box-shadow: 0 18px 44px rgba(20, 30, 40, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.85); }
+.pd-pill { position: absolute; inset: 0; display: flex; align-items: center; gap: 9px; padding: 0 14px 0 7px; border: 0; background: transparent; cursor: pointer; text-align: left; transition: opacity 220ms ease; }
+.pd-pill .pd-label { font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+.pd-pill svg.chev { width: 16px; height: 16px; color: var(--ink-2); margin-left: auto; flex: none; }
+.pd-thumb { width: 66px; height: 34px; border-radius: 17px; overflow: hidden; background: #fff; flex: none; box-shadow: inset 0 0 0 1px rgba(31, 43, 54, 0.1); }
+.pd-thumb svg { width: 100%; height: 100%; display: block; }
+.pd-panel { position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+.plandock[data-open="true"] .pd-pill { opacity: 0; pointer-events: none; }
+.plandock[data-open="true"] .pd-panel { opacity: 1; pointer-events: auto; transition: opacity 280ms ease 160ms; }
+.pd-head { flex: none; display: flex; align-items: center; gap: 6px; padding: 7px 8px 5px 6px; cursor: grab; user-select: none; }
+.pd-head b { font-size: 14px; flex: none; }
+.pd-head .hint { flex: 1; min-width: 0; font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grip { width: 24px; height: 24px; display: grid; place-items: center; color: var(--ink-2); border-radius: 7px; flex: none; }
+.grip svg { width: 14px; height: 14px; }
+.plandock .plan2d { flex: 1; min-height: 0; margin: 0 8px; border-radius: 13px; overflow: hidden; background: #fff; padding: 4px; box-shadow: inset 0 0 0 1px rgba(31, 43, 54, 0.08); }
+.pd-routes { flex: none; padding: 7px 12px 10px; }
+.pd-resize { position: absolute; width: 20px; height: 20px; z-index: 2; touch-action: none; }
+.pd-resize::before { content: ""; position: absolute; inset: 5px; border-radius: 2px; background: linear-gradient(135deg, transparent 45%, var(--ink-2) 45%, var(--ink-2) 55%, transparent 55%, transparent 70%, var(--ink-2) 70%, var(--ink-2) 80%, transparent 80%); opacity: 0.55; }
+.plandock[data-corner="br"] .pd-resize { left: 2px; top: 2px; cursor: nwse-resize; transform: rotate(180deg); }
+.plandock[data-corner="bl"] .pd-resize { right: 2px; top: 2px; cursor: nesw-resize; transform: rotate(270deg); }
+.plandock[data-corner="tr"] .pd-resize { left: 2px; bottom: 2px; cursor: nesw-resize; transform: rotate(90deg); }
+.plandock[data-corner="tl"] .pd-resize { right: 2px; bottom: 2px; cursor: nwse-resize; }
+.plandock[data-open="false"] .pd-resize { display: none; }
+.roomcard { left: 12px; bottom: 12px; width: min(340px, calc(100% - 24px)); padding: 12px 14px 12px; border-radius: 18px; animation: rise 240ms ease; }
+.roomcard .rc-close { position: absolute; top: 8px; right: 8px; }
+.roomcard h3 { font-size: 16px; padding-right: 30px; }
+.roomcard p { margin: 3px 0 0; font-size: 13.5px; }
+#view3dBody.dock-bl .roomcard, #view3dBody.dock-bl .caption { left: auto; right: 12px; }
+#view3dBody.dock-tl .viewhint { display: none; }
+.plan2d svg { width: 100%; height: 100%; display: block; }
+.plansvg .room { cursor: pointer; transition: fill-opacity 120ms; }
+.plansvg .room:hover { stroke: #2453d6; stroke-width: 7; }
+.routes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; }
+.routes label { display: flex; gap: 7px; align-items: flex-start; cursor: pointer; }
+.routes small { display: block; color: var(--ink-2); font-size: 12px; }
+.sw { width: 14px; height: 4px; border-radius: 2px; margin-top: 8px; flex: none; }
+input[type="checkbox"] { accent-color: var(--accent); margin: 3px 0 0; width: 15px; height: 15px; flex: none; }
+#roomInfo h3 { font-size: 15px; }
+#roomInfo p { margin: 3px 0 0; }
+.facts { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; }
+.now { color: var(--accent); font-weight: 700; font-size: 13.5px; }
+.foot-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+

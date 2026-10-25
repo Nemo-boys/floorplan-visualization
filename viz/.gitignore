@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+coverage/
+playwright-report/
+test-results/
+tests/visual/output/
+tests/visual/diff/
+*.log
+.DS_Store
+reports/

@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fi.plan.v0.1",
+  "title": "Floor plan (plan.json v0.1)",
+  "description": "What Module 1 writes and this app reads. Millimetres; origin at the bottom-left corner; x points east and y points north. The adapter (adaptPlan in reference-src/engine.js) also accepts rooms given as polygons and files without doors: it adds a door from each room to the nearest corridor and works out the footprint from the room extents. Unknown room types are drawn and simulated as storage.",
+  "type": "object",
+  "required": [
+    "rooms"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "units": {
+      "const": "mm"
+    },
+    "origin": {
+      "type": "string",
+      "examples": [
+        "bottom-left; x = east, y = north"
+      ]
+    },
+    "building_type": {
+      "type": "string",
+      "examples": [
+        "clinic"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "blurb": {
+      "type": "string",
+      "description": "One-line description shown on sample cards"
+    },
+    "footprint": {
+      "type": "object",
+      "required": [
+        "width_mm",
+        "depth_mm"
+      ],
+      "properties": {
+        "width_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "depth_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "rooms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/room"
+      }
+    },
+    "doors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/door"
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Optional numbers from Module 1; ignored by this app"
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Where the plan came from (free form)"
+    },
+    "version": {
+      "type": "integer",
+      "description": "Added by this app’s export"
+    },
+    "exported_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Added by this app’s export"
+    },
+    "furniture_added": {
+      "type": "array",
+      "description": "Added by this app’s export: furniture placed by hand",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "center_mm": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "facing": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "description": "Added by this app’s export: the plan checks shown in Simulate",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "pass": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "room": {
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "waiting",
+            "reception",
+            "restroom",
+            "exam_room",
+            "procedure_room",
+            "nurse_station",
+            "lab",
+            "provider_office",
+            "staff_lounge",
+            "clean_utility",
+            "soiled_utility",
+            "storage",
+            "corridor"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "description": "Shown everywhere; generated from the type when missing (for example “Exam 3”)"
+        },
+        "zone": {
+          "enum": [
+            "public",
+            "clinical",
+            "staff",
+            "support",
+            "circulation"
+          ],
+          "description": "Generated from the type when missing"
+        },
+        "rect": {
+          "type": "object",
+          "required": [
+            "x_mm",
+            "y_mm",
+            "w_mm",
+            "h_mm"
+          ],
+          "properties": {
+            "x_mm": {
+              "type": "number"
+            },
+            "y_mm": {
+              "type": "number"
+            },
+            "w_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "h_mm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "polygon_mm": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "Used when rect is missing; the bounding rectangle is used"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "rect"
+          ]
+        },
+        {
+          "required": [
+            "polygon_mm"
+          ]
+        }
+      ]
+    },
+    "door": {
+      "type": "object",
+      "required": [
+        "center_mm",
+        "connects"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "door",
+            "opening"
+          ],
+          "default": "door"
+        },
+        "connects": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "string"
+          },
+          "description": "Two room ids, or a room id and \"exterior\""
+        },
+        "center_mm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "width_mm": {
+          "type": "number",
+          "default": 915
+        },
+        "is_entrance": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}

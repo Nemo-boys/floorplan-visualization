@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Floorplan Intelligence: review, simulate and export a clinic plan (design preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+</head>
+<body>
+<div class="app step-import" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>Floorplan Intelligence</h1>
+      <p><b id="planName">No plan yet</b> <span id="planVersion"></span></p>
+    </div>
+    <nav class="stepper" id="stepper" role="tablist" aria-label="Steps">
+      <span class="glider" id="glider" aria-hidden="true"></span>
+      <button type="button" role="tab" data-step="import" aria-selected="true"><span class="num">1</span>Import</button>
+      <button type="button" role="tab" data-step="review" aria-selected="false"><span class="num">2</span>Review</button>
+      <button type="button" role="tab" data-step="simulate" aria-selected="false"><span class="num">3</span>Simulate</button>
+      <button type="button" role="tab" data-step="export" aria-selected="false"><span class="num">4</span>Export</button>
+    </nav>
+    <div class="actions">
+      <span class="badge" id="rendererBadge">Starting</span>
+      <button type="button" class="btn assistant-btn" id="assistantBtn" aria-pressed="false" aria-controls="assistant">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg><span class="lbl">Assistant</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <!-- Step 1: Import -->
+    <section id="importView" aria-labelledby="importTitle">
+      <div class="page">
+        <h2 id="importTitle">Bring in a floor plan</h2>
+        <p class="lede">Plans normally arrive from the Module 1 pipeline. You can also upload a plan.json file or start from one of the sample layouts.</p>
+        <div class="sources">
+          <div class="card source">
+            <h3>From the Module 1 pipeline</h3>
+            <p>New plans from the generator show up here.</p>
+            <div class="inbox">
+              <div class="file"><b>plan_primary-care_v3.json</b><small>Primary care clinic, 18 rooms, received today at 10:42 am</small></div>
+              <button type="button" class="btn primary" id="openPipeline">Open this plan</button>
+            </div>
+            <p class="small muted">Preview: a sample file stands in for Module 1’s output.</p>
+          </div>
+          <div class="card source">
+            <h3>Upload a plan.json</h3>
+            <p>For a file you already have, such as one from your team.</p>
+            <label class="filedrop">Choose a plan.json file<input type="file" id="fileInput" accept=".json,application/json"></label>
+            <p class="small error" id="fileMsg" hidden></p>
+          </div>
+        </div>
+        <div class="card samples">
+          <h3>Or start from a sample layout</h3>
+          <div class="sample-row">
+            <button type="button" class="sample" data-sample="A"><span class="thumb" id="thumbA"></span><b>Layout A</b><small id="thumbTextA">Lobby in the middle</small></button>
+            <button type="button" class="sample" data-sample="B"><span class="thumb" id="thumbB"></span><b>Layout B</b><small id="thumbTextB">Lobby at the west end</small></button>
+            <button type="button" class="sample" data-sample="C"><span class="thumb" id="thumbC"></span><b>Layout C</b><small id="thumbTextC">Nurse station among the exam rooms</small></button>
+          </div>
+        </div>
+        <div class="card summary" id="importSummary" hidden>
+          <div class="thumb" id="importThumb"></div>
+          <div>
+            <h3 id="importName">Plan</h3>
+            <p class="muted small"><span id="importSource"></span>. <span id="importArea"></span></p>
+            <ul class="read" id="importRead"></ul>
+            <button type="button" class="btn primary" id="importNext" data-next="review" disabled>Next: Review</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Review: a bar with the optional Edit button, then two movable panes -->
+    <div class="reviewbar" id="reviewBar">
+      <div class="rb-text"><b id="rbTitle">Review the plan</b><span class="small muted" id="rbHint">Open the floor plan from the corner of the 3D view. Drag it to any corner, and drag its edge to resize it.</span></div>
+      <div class="rb-actions">
+        <button type="button" class="btn" id="editToggle" aria-pressed="false">Edit plan</button>
+        <button type="button" class="btn primary" data-next="simulate">Next: Simulate</button>
+      </div>
+    </div>
+    <!-- Optional editing (opened from Review) -->
+    <aside class="card tools" id="editTools" aria-label="Edit tools">
+      <section>
+        <h2>What do you want to change?</h2>
+        <div class="seg soft full" role="group" aria-label="Tool">
+          <button type="button" data-tool="swap" aria-pressed="true">Swap rooms</button>
+          <button type="button" data-tool="rename" aria-pressed="false">Rename</button>
+          <button type="button" data-tool="furniture" aria-pressed="false">Furniture</button>
+        </div>
+        <div class="tool" id="toolSwap">
+          <p>Click two rooms on the same side of the corridor to trade their places.</p>
+          <p class="small muted" id="swapNote" hidden>Swapping works on the sample layouts. For your own plans, ask the assistant and the change goes to Module 1.</p>
+          <p class="status" id="swapStatus"></p>
+          <div id="swapPreview"></div>
+          <div class="row"><button type="button" class="btn primary" id="swapApply" disabled>Swap them</button><button type="button" class="btn" id="swapClear">Clear</button></div>
+        </div>
+        <div class="tool" id="toolRename" hidden>
+          <p id="renameHint">Click a room on the plan to rename it.</p>
+          <div id="renameRow" hidden><input class="textfield" id="renameInput" aria-label="New room name"><div class="row"><button type="button" class="btn primary" id="renameSave">Save name</button></div></div>
+        </div>
+        <div class="tool" id="toolFurniture" hidden>
+          <p>Pick an item, then click inside a room in the 3D view. Drag to move it, R to rotate. Walking routes go around it.</p>
+          <div class="palette" role="group" aria-label="Furniture to place">
+            <button type="button" data-place="bed" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 18V8M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6"/></svg>Bed</button>
+            <button type="button" data-place="chair" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M7 4v9h10M7 13v7M17 13v7M7 9h8"/></svg>Chair</button>
+            <button type="button" data-place="desk" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 11h18M5 11v8M19 11v8M9 5h6v4H9z"/></svg>Desk</button>
+            <button type="button" data-place="plant" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 15h8l-1 5H9zM12 15V9M12 11c-3 0-5-2-5-5 3 0 5 2 5 5zM12 9c0-3 2-5 5-5 0 3-2 5-5 5z"/></svg>Plant</button>
+            <button type="button" data-place="cabinet" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="6" y="3.5" width="12" height="17" rx="1"/><path d="M12 3.5v17M10 11v2M14 11v2"/></svg>Cabinet</button>
+            <button type="button" data-place="screen" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 5l5 1v13l-5-1zM9 6l6-1v13l-6 1zM15 5l5 1v13l-5-1z"/></svg>Screen</button>
+          </div>
+          <div class="seltools" id="selectionTools" hidden><b id="selectionName">Bed</b><button type="button" class="btn small" id="rotateBtn">Rotate</button><button type="button" class="btn small" id="removeBtn">Remove</button></div>
+        </div>
+      </section>
+      <section>
+        <h2>Bigger changes</h2>
+        <p class="small muted">Resizing, adding or removing rooms goes to the plan generator (Module 1).</p>
+        <div class="row"><button type="button" class="btn" id="askBigger" hidden>Ask the assistant</button></div>
+      </section>
+      <section>
+        <h2>Versions</h2>
+        <ul class="versions" id="versions"></ul>
+      </section>
+      <section>
+        <div class="row" style="margin-top: 0;"><button type="button" class="btn primary" id="doneEditing">Done editing</button></div>
+      </section>
+    </aside>
+
+
+    <div class="stage" id="splitArea">
+      <section class="pane card" id="view3d" aria-label="3D view">
+        <div class="pane-body" id="view3dBody">
+      <div id="view"></div>
+      <div class="ov viewbar">
+        <div class="seg glassbox" role="group" aria-label="Camera">
+          <button type="button" data-view="orbit" aria-pressed="true">Overview</button>
+          <button type="button" data-view="tour" aria-pressed="false">Guided tour</button>
+          <button type="button" data-view="follow" aria-pressed="false">Follow a patient</button>
+          <button type="button" data-view="walk" aria-pressed="false">Walk</button>
+        </div>
+        <div class="seg glassbox" role="group" aria-label="Wall height">
+          <button type="button" data-walls="cut" aria-pressed="true">Cut-away</button>
+          <button type="button" data-walls="full" aria-pressed="false">Full walls</button>
+        </div>
+      </div>
+      <div class="ov zoom">
+        <button type="button" class="iconbtn glassbox" id="zoomIn" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+        <button type="button" class="iconbtn glassbox" id="zoomOut" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+        <button type="button" class="iconbtn glassbox" id="zoomFit" aria-label="Show the whole building"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/><rect x="8.5" y="8.5" width="7" height="7" rx="1"/></svg></button>
+      </div>
+      <div class="ov caption glassbox" id="caption" hidden aria-live="polite">
+        <h3 id="capTitle">Entrance</h3>
+        <p id="capPurpose"></p>
+        <p class="now" id="capNow"></p>
+        <ul class="facts" id="capFacts"></ul>
+      </div>
+      <div class="ov tourbar glassbox" id="tourBar" hidden>
+        <button type="button" class="iconbtn" id="tourPrev" aria-label="Previous stop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button type="button" class="round" id="tourPlay" aria-label="Pause the tour"></button>
+        <button type="button" class="iconbtn" id="tourNext" aria-label="Next stop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        <span class="count" id="tourCount">Stop 1 of 1</span>
+        <button type="button" class="btn small ghost" id="tourExit">End tour</button>
+      </div>
+      <div class="ov tooltip glassbox" id="tooltip" hidden></div>
+      <div class="ov followchip glassbox" id="followChip" hidden role="status"></div>
+      <div class="ov placehint glassbox" id="placeHint" hidden role="status">Click inside a room to place it. R rotates, Esc cancels.</div>
+      <div class="ov pad" id="walkPad" hidden aria-label="Walking controls">
+        <button type="button" class="glassbox" data-pad="tl" aria-label="Turn left">Turn</button>
+        <button type="button" class="glassbox" data-pad="f" aria-label="Walk forward">Ahead</button>
+        <button type="button" class="glassbox" data-pad="tr" aria-label="Turn right">Turn</button>
+        <button type="button" class="glassbox" data-pad="l" aria-label="Step left">Left</button>
+        <button type="button" class="glassbox" data-pad="b" aria-label="Walk back">Back</button>
+        <button type="button" class="glassbox" data-pad="r" aria-label="Step right">Right</button>
+      </div>
+      <div class="ov notice glassbox" id="notice" hidden role="status"></div>
+      <p class="ov viewhint" id="viewHint">Drag to turn, scroll to zoom, right-drag to pan. Click a room for details, double-click to zoom in.</p>
+          <div class="ov roomcard liquid" id="roomCard" hidden aria-live="polite">
+            <button type="button" class="iconbtn sm rc-close" id="roomCardClose" aria-label="Close the room details"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+            <div id="roomInfo"></div>
+          </div>
+          <aside class="plandock liquid" id="planDock" data-open="false" data-corner="br" aria-label="Floor plan">
+            <button type="button" class="pd-pill" id="pdPill" aria-expanded="false" aria-controls="pdPanel"><span class="pd-thumb" id="pdThumb" aria-hidden="true"></span><span class="pd-label">Floor plan</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5"/></svg></button>
+            <div class="pd-panel" id="pdPanel">
+              <div class="pd-head" id="pdHead"><span class="grip" aria-hidden="true"><svg viewBox="0 0 14 14" fill="currentColor"><circle cx="4" cy="3" r="1.3"/><circle cx="10" cy="3" r="1.3"/><circle cx="4" cy="7" r="1.3"/><circle cx="10" cy="7" r="1.3"/><circle cx="4" cy="11" r="1.3"/><circle cx="10" cy="11" r="1.3"/></svg></span><b>Floor plan</b><span class="hint" id="planHint">Click a room to fly there</span><button type="button" class="iconbtn sm" id="pdCollapse" aria-label="Collapse the floor plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></button></div>
+              <div class="plan2d" id="plan2d"></div>
+              <ul class="routes pd-routes" aria-label="Routes on the plan">
+          <li><label><input type="checkbox" id="rJourney" checked><span class="sw" id="swJ"></span><span>Patient path<small id="tJourney"></small></span></label></li>
+          <li><label><input type="checkbox" id="rStaff"><span class="sw" id="swS"></span><span>Nurse walks<small id="tStaff"></small></span></label></li>
+          <li><label><input type="checkbox" id="rEgress"><span class="sw" id="swE"></span><span>Longest way out<small id="tEgress"></small></span></label></li>
+        </ul>
+              <span class="pd-resize" id="pdResize" title="Drag to resize" aria-hidden="true"></span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+
+    <!-- Simulate: build a scenario from typed blocks, run it, read the answer, and look back at earlier runs -->
+    <div class="card simbar" id="simBar">
+      <div class="seg soft simtabs" role="tablist" aria-label="Simulation">
+        <button type="button" role="tab" data-simtab="scenario" aria-selected="true">Scenario</button>
+        <button type="button" role="tab" data-simtab="results" aria-selected="false">Results</button>
+        <button type="button" role="tab" data-simtab="history" aria-selected="false">History<span class="count" id="histCount"></span></button>
+      </div>
+      <label class="scnname"><span>Scenario</span><input type="text" id="scnName" maxlength="60" aria-label="Scenario name"></label>
+      <div class="sb-actions">
+        <label class="btn small filebtn">Import .json<input type="file" id="scnImport" accept=".json,application/json"></label>
+        <button type="button" class="btn small" id="scnDownload">Download .json</button>
+        <button type="button" class="btn primary" data-next="export">Looks good: finalize</button>
+      </div>
+    </div>
+    <aside class="card bpalette" id="palette" aria-label="Blocks you can add"></aside>
+    <section class="card canvas" id="scnCanvas" aria-label="Scenario">
+      <div class="presets" id="presetRow"></div>
+      <div class="daywrap"><div class="daytl" id="dayTimeline" aria-label="The day at a glance. Drag a bar to move it, or drag its edges to change the times."></div><div class="tltip" id="tlTip" hidden></div></div>
+      <div id="scnSections"></div>
+    </section>
+    <aside class="card checkpanel" id="checkPanel" aria-label="Checks and run">
+      <div class="chkstatus" id="chkStatus" role="status"></div>
+      <ul class="chklist" id="chkList"></ul>
+      <div id="chkSummary"></div>
+      <button type="button" class="btn primary big" id="runBtn">Run 20 days</button>
+      <div class="progress" id="runProgress" hidden><span></span><div class="pbar"><i></i></div></div>
+      <details class="sweep">
+        <summary>Try a range of values</summary>
+        <p class="small muted">Runs the scenario once for each value, 10 days each, and compares them.</p>
+        <label class="field">Change<select id="swField"><option value="nurses">Nurses</option><option value="providers">Providers</option><option value="receptionists">Receptionists</option><option value="patients">Patients per day</option></select></label>
+        <label class="field">Values<input class="textfield" id="swValues" value="1, 2, 3" aria-describedby="swHelp"></label>
+        <p class="small muted" id="swHelp">Separate values with commas.</p>
+        <button type="button" class="btn" id="sweepBtn">Run the range</button>
+      </details>
+    </aside>
+    <aside class="card" id="simPanel" aria-label="Results">
+      <div id="resultsBody"></div>
+      <section class="rsec playback">
+        <h3>Watching the day</h3>
+        <p class="small muted" id="playNote"></p>
+        <p class="small" id="dayMsg"></p>
+        <div class="showrow"><label><input type="checkbox" id="lyrTraffic"> Foot traffic</label><label><input type="checkbox" id="lyrWaits" checked> Waiting-time dots</label></div>
+      </section>
+      <details class="rsec planchecks"><summary>Plan checks <span class="small muted" id="checksSummary"></span></summary><ul class="checks" id="checks"></ul><p class="small muted">Example checks until Module 2 connects with the full U.S. rule set.</p></details>
+    </aside>
+    <div class="card transport" id="transport" aria-label="Day timeline">
+      <button type="button" class="play" id="playBtn" aria-label="Play the day"></button>
+      <button type="button" class="iconbtn btn restart" id="restartBtn" aria-label="Restart the day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></button>
+      <div class="clockwrap"><span class="clock" id="clock">8:00 am</span><span class="live"><span>In clinic <b id="liveIn">0</b></span><span>Lobby <b id="liveWait">0</b></span><span>Seen <b id="liveSeen">0</b></span></span></div>
+      <div><canvas id="tl" aria-label="Day timeline. Click to jump to a time."></canvas><div class="ticks" id="tlTicks" aria-hidden="true"></div></div>
+      <div class="speed"><label id="speedLbl">Speed</label><div class="seg soft" role="group" aria-labelledby="speedLbl">
+        <button type="button" data-speed="0.0166667" aria-pressed="false" title="Real time">1×</button>
+        <button type="button" data-speed="0.1666667" aria-pressed="true" title="One minute of the day every 6 seconds">10×</button>
+        <button type="button" data-speed="1" aria-pressed="false" title="One minute of the day every second">60×</button>
+        <button type="button" data-speed="5" aria-pressed="false" title="Five minutes of the day every second">300×</button>
+      </div></div>
+    </div>
+
+    <section class="card history" id="historyView" aria-label="Earlier runs">
+      <header><div><h2>History</h2><p class="small muted">Every run is saved in this browser. Reload a scenario, run it again, or pick two to four runs to compare.</p></div><div class="row"><button type="button" class="btn primary" id="histCompare" disabled>Compare selected</button><button type="button" class="btn ghost" id="histClear">Clear history</button></div></header>
+      <ul class="hlist" id="historyList"></ul>
+      <div id="histCompareBox"></div>
+    </section>
+
+    <!-- Step 5: Export -->
+    <section id="exportView" aria-labelledby="exportTitle">
+      <div class="page">
+        <h2 id="exportTitle">Finalize and export</h2>
+        <p class="lede">This version becomes the final plan. Take it to Blender or other 3D tools, or keep the data for your team.</p>
+        <div class="export-grid">
+          <div class="card final">
+            <h3 id="exName">Plan</h3>
+            <p class="ver" id="exVersion"></p>
+            <dl class="stats" id="exStats"></dl>
+            <div class="thumb" id="exPreview"></div>
+          </div>
+          <div class="outs">
+            <div class="card out">
+              <h3>Everything, ready for Blender</h3>
+              <button type="button" class="btn primary" data-export="zip">Download .zip</button>
+              <p id="exZipName">plan.zip</p>
+              <ul>
+                <li><b>clinic.glb</b>: the 3D model, with each room as its own group</li>
+                <li><b>plan.json</b> and <b>plan.svg</b>: the plan data and the 2D drawing</li>
+                <li><b>build_in_blender.py</b>: builds a Blender file with one collection per room</li>
+                <li><b>Claude skill</b>: lets Claude Code build the Blender file or add the export to your repository</li>
+              </ul>
+              <p class="small" id="exGlbNote" hidden>The 3D model needs WebGL, which didn’t start here, so the .zip has everything except clinic.glb.</p>
+            </div>
+            <div class="card out">
+              <h3>Plan data</h3>
+              <button type="button" class="btn" data-export="json">Download .json</button>
+              <p>plan.json with your edits, added furniture and check results.</p>
+            </div>
+            <div class="card out">
+              <h3>2D drawing</h3>
+              <button type="button" class="btn" data-export="svg">Download .svg</button>
+              <p>The floor plan as a vector drawing for printing or slides.</p>
+            </div>
+            <div class="card out planned">
+              <h3>Send to a GitHub repository</h3>
+              <button type="button" class="btn" disabled>Planned</button>
+              <p>Pushes this export into a folder in your repo. Planned for the real build.</p>
+            </div>
+            <p class="status" id="exStatus" role="status"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="drawer" id="assistant" hidden aria-label="Assistant">
+    <header><h2>Assistant</h2><button type="button" class="btn small ghost" id="chatClose">Close</button></header>
+    <p class="assistant-later">The assistant will be connected in a later version.</p>
+  </aside>
+
+  <div class="toast glassbox" id="toast" hidden role="status"></div>
+  <section class="modal glassbox" id="comparePanel" hidden role="dialog" aria-labelledby="compareTitle">
+    <header><h2 id="compareTitle">Layouts compared on the same day</h2><button type="button" class="btn" id="closeCompare">Close</button></header>
+    <p class="headline" id="compareHeadline"></p>
+    <p class="caption-line" id="compareCaption"></p>
+    <div class="tablewrap"><table class="cmp" id="compareTable"></table></div>
+  </section>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

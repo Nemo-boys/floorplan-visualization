@@ -1,0 +1,78 @@
+{
+  "schema": "fi.scenario.v1",
+  "name": "Broken on purpose",
+  "preset": "custom",
+  "blocks": [
+    {
+      "id": "x1",
+      "type": "hours",
+      "enabled": true,
+      "fields": {
+        "opens": "08:00",
+        "closes": "18:00"
+      }
+    },
+    {
+      "id": "x2",
+      "type": "run",
+      "enabled": true,
+      "fields": {
+        "days": 20,
+        "seed": 42
+      }
+    },
+    {
+      "id": "x3",
+      "type": "steps",
+      "enabled": true,
+      "fields": {
+        "checkin": [
+          2,
+          4
+        ],
+        "intake": [
+          5,
+          9
+        ],
+        "checkout": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "id": "x4",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "nurse",
+        "count": 0,
+        "from": "19:00",
+        "to": "09:00"
+      }
+    },
+    {
+      "id": "x5",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "",
+        "share": 40,
+        "provider_min": [
+          30,
+          10
+        ]
+      }
+    },
+    {
+      "id": "x6",
+      "type": "closed",
+      "enabled": true,
+      "fields": {
+        "room": "",
+        "from": "09:00",
+        "to": "11:00"
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+/* Workspace: each step shows only its own parts */
+.workspace { flex: 1; min-height: 0; display: grid; gap: 12px; padding: 12px 16px 14px; transition: padding-right 220ms ease; }
+.app.chat-open .workspace { padding-right: 404px; }
+#importView, #reviewBar, #splitArea, #editTools, #simPanel, #transport, #exportView, #simBar, #palette, #scnCanvas, #checkPanel, #historyView { display: none; min-height: 0; }
+.step-import .workspace, .step-export .workspace { grid-template-columns: 1fr; }
+.step-import #importView, .step-export #exportView { display: block; overflow-y: auto; animation: rise 220ms ease; }
+.step-review .workspace { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "rbar" "split"; }
+.step-review.editing .workspace { grid-template-columns: 300px minmax(0, 1fr); grid-template-areas: "rbar rbar" "tools split"; }
+.step-review #reviewBar { display: flex; grid-area: rbar; }
+.step-review #splitArea { display: flex; grid-area: split; }
+.step-review.editing #editTools { display: block; grid-area: tools; animation: rise 220ms ease; }
+.step-simulate #simBar { display: flex; grid-area: sbar; }
+.step-simulate.sim-scenario .workspace { grid-template-columns: 236px minmax(0, 1fr) 300px; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "sbar sbar sbar" "palette canvas check"; }
+.step-simulate.sim-scenario #palette, .step-simulate.sim-scenario #scnCanvas, .step-simulate.sim-scenario #checkPanel { display: block; animation: rise 220ms ease; }
+.step-simulate.sim-results .workspace { grid-template-columns: minmax(0, 1fr) 370px; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "sbar sbar" "split panel" "transport panel"; }
+.step-simulate.sim-results #splitArea { display: flex; grid-area: split; }
+.step-simulate.sim-results #simPanel { display: block; grid-area: panel; animation: rise 220ms ease; }
+.step-simulate.sim-results #transport { display: grid; grid-area: transport; }
+.step-simulate.sim-history .workspace { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "sbar" "history"; }
+.step-simulate.sim-history #historyView { display: block; grid-area: history; animation: rise 220ms ease; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; box-shadow: var(--shadow); }
+

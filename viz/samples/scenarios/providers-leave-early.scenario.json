@@ -1,0 +1,162 @@
+{
+  "schema": "fi.scenario.v1",
+  "name": "Providers leave at 4 pm",
+  "preset": "normal",
+  "blocks": [
+    {
+      "id": "l1",
+      "type": "hours",
+      "enabled": true,
+      "fields": {
+        "opens": "08:00",
+        "closes": "18:00"
+      }
+    },
+    {
+      "id": "l2",
+      "type": "run",
+      "enabled": true,
+      "fields": {
+        "days": 20,
+        "seed": 42
+      }
+    },
+    {
+      "id": "l3",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "provider",
+        "count": 3,
+        "from": "08:00",
+        "to": "16:00"
+      }
+    },
+    {
+      "id": "l4",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "nurse",
+        "count": 2,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "l5",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "reception",
+        "count": 1,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "l6",
+      "type": "appointments",
+      "enabled": true,
+      "fields": {
+        "count": 50,
+        "from": "08:00",
+        "to": "16:30",
+        "no_show": 5
+      }
+    },
+    {
+      "id": "l7",
+      "type": "walkins",
+      "enabled": true,
+      "fields": {
+        "count": 9,
+        "pattern": "steady",
+        "from": "08:00",
+        "to": "17:00"
+      }
+    },
+    {
+      "id": "l8",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "Quick follow-up",
+        "share": 25,
+        "provider_min": [
+          8,
+          12
+        ]
+      }
+    },
+    {
+      "id": "l9",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "Standard visit",
+        "share": 60,
+        "provider_min": [
+          15,
+          25
+        ]
+      }
+    },
+    {
+      "id": "l10",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "Long visit",
+        "share": 15,
+        "provider_min": [
+          30,
+          40
+        ]
+      }
+    },
+    {
+      "id": "l11",
+      "type": "steps",
+      "enabled": true,
+      "fields": {
+        "checkin": [
+          2,
+          4
+        ],
+        "intake": [
+          5,
+          9
+        ],
+        "checkout": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "id": "l12",
+      "type": "break",
+      "enabled": true,
+      "fields": {
+        "role": "nurse",
+        "minutes": 30,
+        "from": "12:00",
+        "to": "14:00",
+        "stagger": true
+      }
+    },
+    {
+      "id": "l13",
+      "type": "break",
+      "enabled": true,
+      "fields": {
+        "role": "provider",
+        "minutes": 30,
+        "from": "12:00",
+        "to": "14:00",
+        "stagger": true
+      }
+    }
+  ]
+}

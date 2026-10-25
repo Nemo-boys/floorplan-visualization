@@ -1,0 +1,44 @@
+{
+  "schema": "fi.scenario.v1",
+  "name": "My scenario",
+  "preset": "custom",
+  "blocks": [
+    {
+      "id": "c1",
+      "type": "hours",
+      "enabled": true,
+      "fields": {
+        "opens": "08:00",
+        "closes": "18:00"
+      }
+    },
+    {
+      "id": "c2",
+      "type": "run",
+      "enabled": true,
+      "fields": {
+        "days": 20,
+        "seed": 42
+      }
+    },
+    {
+      "id": "c3",
+      "type": "steps",
+      "enabled": true,
+      "fields": {
+        "checkin": [
+          2,
+          4
+        ],
+        "intake": [
+          5,
+          9
+        ],
+        "checkout": [
+          1,
+          3
+        ]
+      }
+    }
+  ]
+}

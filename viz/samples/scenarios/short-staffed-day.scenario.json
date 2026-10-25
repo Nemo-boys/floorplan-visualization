@@ -1,0 +1,148 @@
+{
+  "schema": "fi.scenario.v1",
+  "name": "Short-staffed day",
+  "preset": "short",
+  "blocks": [
+    {
+      "id": "s1",
+      "type": "hours",
+      "enabled": true,
+      "fields": {
+        "opens": "08:00",
+        "closes": "18:00"
+      }
+    },
+    {
+      "id": "s2",
+      "type": "run",
+      "enabled": true,
+      "fields": {
+        "days": 20,
+        "seed": 42
+      }
+    },
+    {
+      "id": "s3",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "provider",
+        "count": 2,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "s4",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "nurse",
+        "count": 1,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "s5",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "reception",
+        "count": 1,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "s6",
+      "type": "appointments",
+      "enabled": true,
+      "fields": {
+        "count": 44,
+        "from": "08:00",
+        "to": "16:30",
+        "no_show": 5
+      }
+    },
+    {
+      "id": "s7",
+      "type": "walkins",
+      "enabled": true,
+      "fields": {
+        "count": 6,
+        "pattern": "steady",
+        "from": "08:00",
+        "to": "17:00"
+      }
+    },
+    {
+      "id": "s8",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "Standard visit",
+        "share": 80,
+        "provider_min": [
+          15,
+          25
+        ]
+      }
+    },
+    {
+      "id": "s9",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "Long visit",
+        "share": 20,
+        "provider_min": [
+          30,
+          40
+        ]
+      }
+    },
+    {
+      "id": "s10",
+      "type": "steps",
+      "enabled": true,
+      "fields": {
+        "checkin": [
+          2,
+          4
+        ],
+        "intake": [
+          5,
+          9
+        ],
+        "checkout": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "id": "s11",
+      "type": "break",
+      "enabled": true,
+      "fields": {
+        "role": "nurse",
+        "minutes": 30,
+        "from": "12:00",
+        "to": "13:00",
+        "stagger": true
+      }
+    },
+    {
+      "id": "s12",
+      "type": "out",
+      "enabled": true,
+      "fields": {
+        "role": "provider",
+        "count": 1,
+        "from": "13:00",
+        "to": "15:00"
+      }
+    }
+  ]
+}

@@ -1,0 +1,196 @@
+{
+  "schema": "fi.scenario.v1",
+  "name": "Every block type",
+  "preset": "custom",
+  "blocks": [
+    {
+      "id": "e1",
+      "type": "hours",
+      "enabled": true,
+      "fields": {
+        "opens": "08:00",
+        "closes": "18:00"
+      }
+    },
+    {
+      "id": "e2",
+      "type": "run",
+      "enabled": true,
+      "fields": {
+        "days": 20,
+        "seed": 42
+      }
+    },
+    {
+      "id": "e3",
+      "type": "steps",
+      "enabled": true,
+      "fields": {
+        "checkin": [
+          2,
+          4
+        ],
+        "intake": [
+          5,
+          9
+        ],
+        "checkout": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "id": "e4",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "provider",
+        "count": 2,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "e5",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "provider",
+        "count": 1,
+        "from": "12:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "e6",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "nurse",
+        "count": 2,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "e7",
+      "type": "shift",
+      "enabled": true,
+      "fields": {
+        "role": "reception",
+        "count": 2,
+        "from": "08:00",
+        "to": "18:00"
+      }
+    },
+    {
+      "id": "e8",
+      "type": "appointments",
+      "enabled": true,
+      "fields": {
+        "count": 60,
+        "from": "08:00",
+        "to": "16:30",
+        "no_show": 5
+      }
+    },
+    {
+      "id": "e9",
+      "type": "walkins",
+      "enabled": true,
+      "fields": {
+        "count": 20,
+        "pattern": "lunch",
+        "from": "08:00",
+        "to": "17:00"
+      }
+    },
+    {
+      "id": "e10",
+      "type": "group",
+      "enabled": true,
+      "fields": {
+        "count": 10,
+        "at": "15:00"
+      }
+    },
+    {
+      "id": "e11",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "Standard visit",
+        "share": 70,
+        "provider_min": [
+          15,
+          25
+        ]
+      }
+    },
+    {
+      "id": "e12",
+      "type": "visit_type",
+      "enabled": true,
+      "fields": {
+        "name": "Long visit",
+        "share": 30,
+        "provider_min": [
+          30,
+          40
+        ]
+      }
+    },
+    {
+      "id": "e13",
+      "type": "break",
+      "enabled": true,
+      "fields": {
+        "role": "reception",
+        "minutes": 30,
+        "from": "12:00",
+        "to": "13:00",
+        "stagger": true
+      }
+    },
+    {
+      "id": "e14",
+      "type": "out",
+      "enabled": true,
+      "fields": {
+        "role": "nurse",
+        "count": 1,
+        "from": "10:00",
+        "to": "12:00"
+      }
+    },
+    {
+      "id": "e15",
+      "type": "closed",
+      "enabled": true,
+      "fields": {
+        "room": "exam_room_3",
+        "from": "09:00",
+        "to": "11:00"
+      }
+    },
+    {
+      "id": "e16",
+      "type": "rule",
+      "enabled": true,
+      "fields": {
+        "metric": "desk",
+        "op": "gt",
+        "value": 4,
+        "hold": 5,
+        "from": "08:00",
+        "to": "17:00",
+        "action": "pause_walkins",
+        "role": "nurse",
+        "count": 1,
+        "delay": 20,
+        "duration": 60
+      }
+    }
+  ]
+}

@@ -13,6 +13,14 @@ from aegisplan.schemas import PlanDocument
 from aegisplan.fml_parser import parse_fml
 from aegisplan.validator import validate_plan
 from aegisplan.cpsat_repair import repair_plan, RepairResult
+from aegisplan.fml_grammar import build_gbnf
+from aegisplan.program import (
+    VARIANTS,
+    layout_program,
+    merge_programs,
+    program_from_brief,
+    program_from_fml,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +123,10 @@ class CandidateEvaluation:
         self.solver_status = solver_status
         self.solve_time_ms = solve_time_ms
         self.rank = rank
-        self.source = source  # "nemotron" or "fallback" (heuristic template)
+        self.source = source  # "nemotron" or "fallback" (no model: brief parser or template)
+        self.program: Dict[str, int] = {}
+        self.model_fml = ""
+        self.variant = ""
 
 
 class GenerationRouter:
@@ -141,7 +152,16 @@ class GenerationRouter:
         raw_candidates_fml: List[str] = []
         self._fallback_fml = set()
 
-        if mode == "cloud" and self.openrouter_api_key:
+        draft: Optional[Dict[str, Any]] = None
+        if mode in ("local", "gguf"):
+            # Program first: Nemotron (or the brief parser) decides which rooms; the layout
+            # synthesizer places them, one candidate per entrance variant.
+            draft = self._draft_program(brief, boundary_w, boundary_h)
+            variants = VARIANTS[:num_candidates]
+            raw_candidates_fml = [layout_program(draft["program"], boundary_w, boundary_h, v) for v in variants]
+            if draft["source"] != "nemotron":
+                self._fallback_fml.update(raw_candidates_fml)
+        elif mode == "cloud" and self.openrouter_api_key:
             raw_candidates_fml = await self._call_openrouter(
                 brief, boundary_w, boundary_h, locked_rooms, num_candidates
             )
@@ -316,6 +336,12 @@ class GenerationRouter:
                 except Exception as ex:
                     logger.error(f"Fallback candidate {idx} evaluation failed: {ex}")
 
+        if draft:
+            for ev in evaluations:
+                ev.program = draft["program"]
+                ev.model_fml = draft["model_fml"]
+                ev.variant = VARIANTS[ev.candidate_idx - 1] if ev.candidate_idx <= len(VARIANTS) else ""
+
         # Lexicographical Ranking:
         # 1. Maximize checks passed (and optimal solver status)
         # 2. Minimize pre-repair overlap percentage (cleaner layout)
@@ -413,12 +439,35 @@ class GenerationRouter:
             ]
             locked_str = "\nLocked Rooms:\n" + "\n".join(locked_lines) + "\n"
 
-        exemplar_str = f"\nReference Exemplar:\n{FEW_SHOT_EXEMPLAR}\n" if include_exemplar else "\n"
+        # Without the exemplar this is exactly the fine-tuning prompt (dataset/*.jsonl).
+        exemplar_str = f"\nReference Exemplar:\n{FEW_SHOT_EXEMPLAR}\n" if include_exemplar else ""
         return (
             f"Generate an outpatient clinic floorplan for boundary RECT 0 0 {w} {h}.\n"
             f"Clinical Brief: {brief}\n{locked_str}{exemplar_str}"
             "Emit strictly valid FML-DSL:"
         )
+
+    def _draft_program(self, brief: str, w: int, h: int) -> Dict[str, Any]:
+        """Room program for a brief: from Nemotron with grammar-constrained decoding when the
+        local model is available, otherwise from the brief parser. Counts the brief states
+        explicitly ("6 exam rooms") always win."""
+        program, source, model_fml = None, "fallback", ""
+        try:
+            from aegisplan.gguf_engine import get_gguf_engine, is_gguf_available
+
+            engine = get_gguf_engine() if is_gguf_available() else None
+            if engine:
+                messages = [
+                    {"role": "system", "content": SYSTEM_PROMPT + "/no_think"},
+                    {"role": "user", "content": self._format_prompt(brief, w, h, None, include_exemplar=False)},
+                ]
+                model_fml = engine.generate_chat(messages, grammar=build_gbnf(w, h, schema="program"))
+                program = program_from_fml(model_fml) or None
+                source = "nemotron" if program else "fallback"
+        except Exception as e:
+            logger.warning("Nemotron program draft failed (%s); reading the brief instead.", e)
+        program = merge_programs(program, brief) if program else program_from_brief(brief)
+        return {"program": program, "source": source, "model_fml": model_fml}
 
     def _synthesize_heuristic_candidates(
         self,

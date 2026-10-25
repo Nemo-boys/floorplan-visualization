@@ -10,6 +10,7 @@ from pathlib import Path
 
 from aegisplan.export_viz import to_viz_plan
 from aegisplan.fml_parser import parse_fml
+from aegisplan.program import VARIANTS, layout_program, program_from_brief
 from aegisplan.router import FEW_SHOT_EXEMPLAR, GenerationRouter
 from aegisplan.validator import validate_plan
 
@@ -30,6 +31,13 @@ def main():
                 break
             msgs = json.loads(line)["messages"]
             plans.append((f"test_{i + 1:02d}", next(m["content"] for m in msgs if m["role"] == "assistant")))
+
+    # The layout synthesizer's three variants for one brief's room program.
+    program = program_from_brief(
+        "Primary care clinic with 6 exam rooms, a nurse station, reception and waiting, "
+        "an ADA restroom, and separate clean and soiled utility rooms."
+    )
+    plans += [(f"program_{v}", layout_program(program, 24000, 14000, v)) for v in VARIANTS]
 
     # The offline fallback candidates include a nurse station.
     fallback = GenerationRouter()._synthesize_heuristic_candidates("", 24000, 14000, None, 3)

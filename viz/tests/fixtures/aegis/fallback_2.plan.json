@@ -315,7 +315,7 @@
       "label": "Exit travel distance",
       "pass": true,
       "status": "PASS",
-      "detail": "Max travel distance 33700mm <= 45,720mm limit (required: <= 45,720mm (150 ft unsprinklered) or <= 60,960mm (200 ft sprinklered))",
+      "detail": "Max travel distance 27000mm <= 45,720mm limit (required: <= 45,720mm (150 ft unsprinklered) or <= 60,960mm (200 ft sprinklered))",
       "source": "IBC Table 1017.2 / NFPA-101 Exit Access Travel Distance"
     }
   ],

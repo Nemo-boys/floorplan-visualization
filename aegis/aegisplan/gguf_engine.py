@@ -90,11 +90,11 @@ class GGUFInferenceEngine:
                 "Place a .gguf model in checkpoints/ or export via Google Colab."
             )
 
-        # For hybrid SSM architectures (NemotronH/Mamba-2), llama.cpp Metal GPU offloading
-        # can trigger KV-dimension slice mismatches; default to CPU (0) with multi-threaded SIMD
-        # unless explicitly overridden via AEGISPLAN_GPU_LAYERS.
+        # All layers on the GPU (Metal). Older llama.cpp builds hit KV-dimension mismatches with
+        # the hybrid Mamba-2 layers on Metal; llama-cpp-python 0.3.36 runs it correctly and about
+        # 1.3x faster than CPU on an M4 Pro. Set AEGISPLAN_GPU_LAYERS=0 to run on the CPU.
         if n_gpu_layers is None:
-            n_gpu_layers = int(os.environ.get("AEGISPLAN_GPU_LAYERS", "0"))
+            n_gpu_layers = int(os.environ.get("AEGISPLAN_GPU_LAYERS", "-1"))
 
         threads = n_threads or int(os.environ.get("AEGISPLAN_THREADS", str(os.cpu_count() or 8)))
 
@@ -195,6 +195,24 @@ class GGUFInferenceEngine:
 
         lines.append("END_PLAN")
         return "\n".join(lines)
+
+
+    def generate_chat(
+        self,
+        messages: List[Dict[str, str]],
+        grammar: Optional[str] = None,
+        temperature: float = 0.0,
+        max_tokens: int = 900,
+    ) -> str:
+        """Chat completion with the model's own chat template, optionally constrained by a GBNF grammar."""
+        llama_grammar = None
+        if grammar:
+            from llama_cpp import LlamaGrammar
+            llama_grammar = LlamaGrammar.from_string(grammar, verbose=False)
+        out = self.llm.create_chat_completion(
+            messages=messages, temperature=temperature, max_tokens=max_tokens, grammar=llama_grammar
+        )
+        return out["choices"][0]["message"]["content"].strip()
 
 
 def get_gguf_engine() -> Optional[GGUFInferenceEngine]:

@@ -1,0 +1,31 @@
+/* Side panels you can put away (not in the reference; deviations.md #9, asked for by the user). */
+.workspace { position: relative; }
+.edge-tab {
+  display: none; position: absolute; z-index: 6; top: 50%; width: 18px; height: 56px; margin-top: -28px; padding: 0;
+  place-items: center; border: 1px solid var(--rule); background: var(--panel); color: var(--ink-2); box-shadow: var(--shadow);
+  transition: background 0.15s, color 0.15s;
+}
+.edge-tab:hover { background: var(--accent-soft); color: var(--accent); }
+.edge-tab.left { left: 0; border-left: 0; border-radius: 0 10px 10px 0; }
+.edge-tab.right { right: 0; border-right: 0; border-radius: 10px 0 0 10px; }
+.app.chat-open .edge-tab.right { right: 392px; }
+.step-review.editing .edge-tab.left,
+.step-simulate.sim-scenario .edge-tab.left,
+.step-simulate.sim-scenario .edge-tab.right,
+.step-simulate.sim-results .edge-tab.right { display: grid; }
+
+.app.hide-left.step-review.editing .workspace { grid-template-columns: 0 minmax(0, 1fr); column-gap: 0; }
+.app.hide-left.step-review.editing #editTools { display: none; }
+.app.hide-left.step-simulate.sim-scenario .workspace { grid-template-columns: 0 minmax(0, 1fr) 300px; }
+.app.hide-right.step-simulate.sim-scenario .workspace { grid-template-columns: 236px minmax(0, 1fr) 0; }
+.app.hide-left.hide-right.step-simulate.sim-scenario .workspace { grid-template-columns: 0 minmax(0, 1fr) 0; }
+/* these two are placed by order, not by area, so they stay in the grid at zero width */
+.app.hide-left.step-simulate.sim-scenario #palette,
+.app.hide-right.step-simulate.sim-scenario #checkPanel { visibility: hidden; min-width: 0; padding: 0; border: 0; overflow: hidden; }
+.app.hide-left.step-simulate.sim-scenario #scnCanvas { margin-left: -12px; }
+.app.hide-right.step-simulate.sim-scenario #scnCanvas { margin-right: -12px; }
+.app.hide-right.step-simulate.sim-results .workspace { grid-template-columns: minmax(0, 1fr) 0; column-gap: 0; }
+.app.hide-right.step-simulate.sim-results #simPanel { display: none; }
+@media (max-width: 860px) {
+  .edge-tab { display: none !important; }
+}

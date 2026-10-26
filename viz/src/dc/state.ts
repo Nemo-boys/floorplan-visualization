@@ -27,6 +27,7 @@ export interface State {
   view: '3d' | 'plan';
   conditions: Conditions; // failures and stresses applied in the Test step
   rates: Rates; // cost assumptions, editable in the Cost step
+  readBy: { model: string; added: string[]; notes: string; ms: number } | null; // Nemotron's part in reading the brief
 }
 
 export const DEFAULT_BRIEF = '20 MW AI factory, liquid-cooled GB200 racks, N+1 cooling, 2N power';
@@ -42,7 +43,8 @@ export const state: State = {
   lens: 'layout',
   view: '3d',
   conditions: NORMAL,
-  rates: { ...DEFAULT_RATES }
+  rates: { ...DEFAULT_RATES },
+  readBy: null
 };
 
 type Topic = 'step' | 'options' | 'selected' | 'pick' | 'lens' | 'conditions' | 'theme' | 'cost';

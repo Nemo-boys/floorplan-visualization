@@ -448,7 +448,7 @@ export function testScreen(): HTMLElement {
             'div',
             { class: 'pool', title: p.sentence },
             h('div', { class: 'pool-head' }, h('span', {}, p.label), h('b', {}, `${kw(p.loadKw)} of ${kw(p.capacityKw)}`)),
-            h('div', { class: 'bar' }, h('i', { style: `width:${pct * 100}%;background:${healthCss[p.health]}` }))
+            h('div', { class: 'meter' }, h('i', { style: `width:${pct * 100}%;background:${healthCss[p.health]}` }))
           );
         })
     );
@@ -530,6 +530,7 @@ export function testScreen(): HTMLElement {
     }
     slot.replaceChildren(stage.el);
     stage.setActions(h('button', { class: 'btn dark', type: 'button', onclick: () => ((state.step = 'cost'), emit('step')), html: `See the cost ${ICONS.arrowRight}` }));
+    stage.setRail(slot.parentElement);
     stage.setInspectorExtra(inspectorExtra);
     if (state.lens === 'layout') {
       state.lens = 'backup';

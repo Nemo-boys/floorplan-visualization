@@ -63,6 +63,23 @@ function plan(text: string): Plan {
   if (!any)
     return { calls: [], say: () => 'Describe the site first, for example: **“20 MW AI factory, liquid cooled, N+1 cooling, 2N power”**. I’ll design three options from it.' };
 
+  // prove / export
+  if (has(/cp-?sat|prove|solver|verify/))
+    return {
+      calls: [{ name: 'prove_layout' }],
+      say: (r) => {
+        const c = r[0] as { valid: boolean; rooms: number; doors: number; ms: number; saving_pct: number | null; status: string };
+        return c.valid
+          ? `**Proven.** CP-SAT checked ${c.rooms} rooms and ${c.doors} doors in ${c.ms} ms: no overlaps, every door joins rooms that touch.${c.status === 'OPTIMAL' && !c.saving_pct ? ' No shorter building fits them.' : ''}`
+          : 'CP-SAT found a problem with the room layout. Open the CP-SAT card on the Design step for details.';
+      }
+    };
+  if (has(/export|download|omniverse|usd|json/))
+    return {
+      calls: [{ name: 'export_design', args: { format: has(/json|data/) && !has(/usd|omniverse/) ? 'json' : 'usd' } }],
+      say: (r) => `Downloaded **${(r[0] as { downloaded: string }).downloaded}**. ${has(/json|data/) && !has(/usd|omniverse/) ? 'It holds every number in the app.' : 'Open it in NVIDIA Omniverse or any USD viewer.'}`
+    };
+
   // fix
   if (has(/\b(fix|repair|reset|undo|restore|back to normal)\b/))
     return { calls: [{ name: 'fix_everything' }], say: () => 'All repaired, back to a normal day. Everything is running with backup to spare.' };

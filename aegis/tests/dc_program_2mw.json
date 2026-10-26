@@ -1,0 +1,310 @@
+{
+ "building": {
+  "x": 3000,
+  "y": 16000,
+  "w": 41200,
+  "h": 32300
+ },
+ "rooms": [
+  {
+   "id": "corridor_1",
+   "type": "corridor",
+   "name": "Main corridor",
+   "x": 3000,
+   "y": 34500,
+   "w": 41200,
+   "h": 3000,
+   "outdoor": false
+  },
+  {
+   "id": "corridor_2",
+   "type": "corridor",
+   "name": "Front corridor",
+   "x": 3000,
+   "y": 24000,
+   "w": 41200,
+   "h": 3000,
+   "outdoor": false
+  },
+  {
+   "id": "data_hall_1",
+   "type": "data_hall",
+   "name": "Data hall",
+   "x": 3000,
+   "y": 37500,
+   "w": 9000,
+   "h": 10800,
+   "outdoor": false
+  },
+  {
+   "id": "future_hall",
+   "type": "data_hall",
+   "name": "Room to grow",
+   "x": 12000,
+   "y": 37500,
+   "w": 32200,
+   "h": 10800,
+   "outdoor": false
+  },
+  {
+   "id": "link_1",
+   "type": "corridor",
+   "name": "Link corridor",
+   "x": 3000,
+   "y": 27000,
+   "w": 3000,
+   "h": 7500,
+   "outdoor": false
+  },
+  {
+   "id": "electrical_A",
+   "type": "electrical_room",
+   "name": "Switchgear",
+   "x": 6000,
+   "y": 27000,
+   "w": 7500,
+   "h": 7500,
+   "outdoor": false
+  },
+  {
+   "id": "ups_A",
+   "type": "ups_room",
+   "name": "UPS",
+   "x": 13500,
+   "y": 27000,
+   "w": 9000,
+   "h": 7500,
+   "outdoor": false
+  },
+  {
+   "id": "battery_A",
+   "type": "battery_room",
+   "name": "Batteries",
+   "x": 22500,
+   "y": 27000,
+   "w": 7800,
+   "h": 7500,
+   "outdoor": false
+  },
+  {
+   "id": "mechanical_1",
+   "type": "mechanical_room",
+   "name": "Pumps & heat exchangers",
+   "x": 30300,
+   "y": 27000,
+   "w": 13900,
+   "h": 7500,
+   "outdoor": false
+  },
+  {
+   "id": "loading_dock_1",
+   "type": "loading_dock",
+   "name": "Loading dock",
+   "x": 3000,
+   "y": 16000,
+   "w": 7000,
+   "h": 8000,
+   "outdoor": false
+  },
+  {
+   "id": "staging_1",
+   "type": "staging",
+   "name": "Staging",
+   "x": 10000,
+   "y": 16000,
+   "w": 9900,
+   "h": 8000,
+   "outdoor": false
+  },
+  {
+   "id": "storage_1",
+   "type": "storage",
+   "name": "Spares store",
+   "x": 19900,
+   "y": 16000,
+   "w": 6200,
+   "h": 8000,
+   "outdoor": false
+  },
+  {
+   "id": "noc_1",
+   "type": "noc",
+   "name": "Operations centre",
+   "x": 26100,
+   "y": 16000,
+   "w": 6500,
+   "h": 8000,
+   "outdoor": false
+  },
+  {
+   "id": "office_1",
+   "type": "office",
+   "name": "Offices",
+   "x": 32600,
+   "y": 16000,
+   "w": 7600,
+   "h": 8000,
+   "outdoor": false
+  },
+  {
+   "id": "mmr_1",
+   "type": "mmr",
+   "name": "Network entry",
+   "x": 40200,
+   "y": 16000,
+   "w": 4000,
+   "h": 8000,
+   "outdoor": false
+  },
+  {
+   "id": "generator_yard",
+   "type": "generator_yard",
+   "name": "Generator yard",
+   "x": 3000,
+   "y": 3000,
+   "w": 41200,
+   "h": 12000,
+   "outdoor": true
+  },
+  {
+   "id": "cooling_yard",
+   "type": "cooling_yard",
+   "name": "Cooling yard",
+   "x": 3000,
+   "y": 49300,
+   "w": 41200,
+   "h": 10000,
+   "outdoor": true
+  }
+ ],
+ "doors": [
+  {
+   "id": "door_entrance",
+   "rooms": [
+    "corridor_2",
+    "outside"
+   ],
+   "width": 1800
+  },
+  {
+   "id": "door_data_hall_1",
+   "rooms": [
+    "data_hall_1",
+    "corridor_1"
+   ],
+   "width": 2400
+  },
+  {
+   "id": "door_future_hall",
+   "rooms": [
+    "future_hall",
+    "corridor_1"
+   ],
+   "width": 2400
+  },
+  {
+   "id": "door_link_1_n",
+   "rooms": [
+    "link_1",
+    "corridor_1"
+   ],
+   "width": 3000
+  },
+  {
+   "id": "door_link_1_s",
+   "rooms": [
+    "link_1",
+    "corridor_2"
+   ],
+   "width": 3000
+  },
+  {
+   "id": "door_electrical_A",
+   "rooms": [
+    "electrical_A",
+    "corridor_1"
+   ],
+   "width": 1800
+  },
+  {
+   "id": "door_ups_A",
+   "rooms": [
+    "ups_A",
+    "corridor_1"
+   ],
+   "width": 1800
+  },
+  {
+   "id": "door_battery_A",
+   "rooms": [
+    "battery_A",
+    "corridor_1"
+   ],
+   "width": 1200
+  },
+  {
+   "id": "door_mechanical_1",
+   "rooms": [
+    "mechanical_1",
+    "corridor_1"
+   ],
+   "width": 1800
+  },
+  {
+   "id": "door_dock_truck",
+   "rooms": [
+    "loading_dock_1",
+    "outside"
+   ],
+   "width": 3600
+  },
+  {
+   "id": "door_dock_staging",
+   "rooms": [
+    "loading_dock_1",
+    "staging_1"
+   ],
+   "width": 3000
+  },
+  {
+   "id": "door_staging_1",
+   "rooms": [
+    "staging_1",
+    "corridor_2"
+   ],
+   "width": 2400
+  },
+  {
+   "id": "door_storage_1",
+   "rooms": [
+    "storage_1",
+    "corridor_2"
+   ],
+   "width": 1000
+  },
+  {
+   "id": "door_noc_1",
+   "rooms": [
+    "noc_1",
+    "corridor_2"
+   ],
+   "width": 1000
+  },
+  {
+   "id": "door_office_1",
+   "rooms": [
+    "office_1",
+    "corridor_2"
+   ],
+   "width": 1000
+  },
+  {
+   "id": "door_mmr_1",
+   "rooms": [
+    "mmr_1",
+    "corridor_2"
+   ],
+   "width": 1000
+  }
+ ]
+}

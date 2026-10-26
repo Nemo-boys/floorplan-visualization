@@ -11,6 +11,8 @@ import { current, emit, state, type Step } from '../state';
 import { EQUIP_HELP, ROOM_HELP } from '../ui/help';
 import { LENSES, type Lens } from '../ui/lens';
 import { getStage } from '../ui/stage';
+import { checkProgram } from '../aegis';
+import { download, toJson, toUsda } from '../export/usd';
 import { recost } from '../ui/cost';
 import { BREAKABLE, testControl } from '../ui/test';
 
@@ -387,6 +389,26 @@ export const TOOLS: Tool[] = [
       return { [rate.label]: `${a.value} ${rate.unit}`, now: costs() };
     },
     label: (a) => `Set ${RATES.find((r) => r.key === a.key)?.label.toLowerCase() ?? String(a.key)}`
+  },
+  {
+    name: 'prove_layout',
+    description: 'Ask CP-SAT (on the AegisPlan server) to prove the shown room layout: no overlaps, inside the building, every door joins rooms that touch, and whether a shorter building could fit.',
+    parameters: obj({}),
+    run: async () => (await checkProgram(need().design)) ?? { error: 'The AegisPlan server is not running, so CP-SAT is not available.' },
+    label: () => 'Asked CP-SAT to prove the layout'
+  },
+  {
+    name: 'export_design',
+    description: 'Download the shown option: "usd" (OpenUSD .usda for NVIDIA Omniverse, every room, wall and part with its numbers) or "json" (all the data).',
+    parameters: obj({ format: { type: 'string', enum: ['usd', 'json'] } }, ['format']),
+    run: (a) => {
+      const o = need();
+      const name = `datacenter-${o.design.profile.key}-${Math.round(o.design.itKw / 1000)}mw`;
+      if (a.format === 'json') download(`${name}.json`, toJson(o, { brief: state.brief, basis: state.basis, rates: state.rates }), 'application/json');
+      else download(`${name}.usda`, toUsda(o.design, o.cost), 'model/vnd.usda');
+      return { downloaded: `${name}.${a.format === 'json' ? 'json' : 'usda'}` };
+    },
+    label: (a) => `Exported ${a.format === 'json' ? 'the data' : 'OpenUSD'}`
   },
   {
     name: 'new_design',

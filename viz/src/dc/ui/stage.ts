@@ -2,7 +2,7 @@
    that explains what was clicked. Screens move this one element into place and add their own actions. */
 import { current, emit, on, state } from '../state';
 import type { Viewer } from '../view3d/viewer';
-import { h } from './dom';
+import { ICONS, h } from './dom';
 import { renderInspector } from './inspector';
 import { LENSES, colorFor, legendFor, lensData, toCss, type Lens, type LensData } from './lens';
 import { createPlan } from './plan2d';
@@ -15,6 +15,8 @@ export interface Stage {
   setView(v: '3d' | 'plan'): void;
   preset(p: 'overview' | 'inside' | 'top'): void;
   focus(id: string): void;
+  /* The screen's side panel (the rail): the stage shows a button to hide it, for a full view of the model. */
+  setRail(work: HTMLElement | null): void;
   live(): LensData | null;
   refresh(): void;
 }
@@ -74,7 +76,62 @@ function createStage(): Stage {
     h('button', { type: 'button', 'aria-label': 'Zoom in', onclick: () => (state.view === '3d' ? viewer?.zoom(0.7) : plan.zoom(0.7)) }, '+'),
     h('button', { type: 'button', 'aria-label': 'Zoom out', onclick: () => (state.view === '3d' ? viewer?.zoom(1.4) : plan.zoom(1.4)) }, '−')
   );
-  const topLeft = h('div', { class: 'floating top-left' }, viewSeg, presets, zoom, badge);
+  // ---------- panels: hide the side rail, minimise the card, or clear everything for a full view
+  const pref = (key: string, fallback: boolean) => {
+    try {
+      const v = localStorage.getItem(key);
+      return v === null ? fallback : v === '1';
+    } catch {
+      return fallback;
+    }
+  };
+  const savePref = (key: string, v: boolean) => {
+    try {
+      localStorage.setItem(key, v ? '1' : '0');
+    } catch {
+      /* private mode */
+    }
+  };
+  let work: HTMLElement | null = null;
+  let railOpen = pref('dc.rail', true);
+  let cardOpen = pref('dc.card', false); // starts as a title only; picking something opens it
+  let bare = false;
+  const railBtn = h('button', { type: 'button', class: 'tool-btn', html: ICONS.sidebar, onclick: () => setRailOpen(!railOpen) });
+  const bareBtn = h('button', { type: 'button', class: 'tool-btn', html: ICONS.expand, onclick: () => setBare(!bare) });
+  function setRailOpen(open: boolean) {
+    railOpen = open;
+    savePref('dc.rail', open);
+    paintPanels();
+  }
+  function setBare(on: boolean) {
+    bare = on;
+    paintPanels();
+  }
+  function paintPanels() {
+    work?.classList.toggle('rail-hidden', !railOpen || bare);
+    el.classList.toggle('bare', bare);
+    el.classList.toggle('card-min', !cardOpen);
+    railBtn.style.display = work ? '' : 'none';
+    railBtn.setAttribute('aria-pressed', String(railOpen && !bare));
+    railBtn.setAttribute('aria-label', railOpen ? 'Hide the side panel' : 'Show the side panel');
+    railBtn.title = `${railOpen ? 'Hide' : 'Show'} the side panel ( [ )`;
+    bareBtn.setAttribute('aria-pressed', String(bare));
+    bareBtn.setAttribute('aria-label', bare ? 'Show the panels' : 'Full view');
+    bareBtn.title = bare ? 'Show the panels (F)' : 'Full view: hide every panel (F)';
+    bareBtn.innerHTML = bare ? ICONS.collapse : ICONS.expand;
+    // the model centres in whatever space the cards leave
+    viewer?.setInsets({ left: bare ? 0 : 150, right: bare || !cardOpen ? 0 : 340, top: 0, bottom: bare ? 40 : 110 });
+  }
+  document.addEventListener('keydown', (ev) => {
+    const t = ev.target as HTMLElement;
+    if (ev.metaKey || ev.ctrlKey || ev.altKey || t.closest('input, textarea, select, [contenteditable]') || !el.isConnected) return;
+    if (ev.key === '[' && work) setRailOpen(!railOpen);
+    else if (ev.key.toLowerCase() === 'f') setBare(!bare);
+    else if (ev.key === 'Escape' && bare) setBare(false);
+  });
+  const panelTools = h('div', { class: 'tool-row' }, railBtn, bareBtn);
+
+  const topLeft = h('div', { class: 'floating top-left' }, panelTools, viewSeg, presets, zoom, badge);
 
   // ---- lens bar (bottom centre)
   const lensBar = h('div', { class: 'floating toolbar', role: 'group', 'aria-label': 'What to show' });
@@ -136,6 +193,20 @@ function createStage(): Stage {
     const o = current();
     if (!o) return;
     renderInspector(inspector, o, compute(), extra?.() ?? []);
+    const min = h('button', {
+      class: 'minimize',
+      type: 'button',
+      'aria-label': cardOpen ? 'Minimise this card' : 'Expand this card',
+      title: cardOpen ? 'Minimise' : 'Expand',
+      html: cardOpen ? ICONS.chevronUp : ICONS.chevronDown,
+      onclick: () => {
+        cardOpen = !cardOpen;
+        savePref('dc.card', cardOpen);
+        paintPanels();
+        paintInspector();
+      }
+    });
+    inspector.append(min);
     viewer?.select(state.pick?.id ?? null);
     plan.select(state.pick?.id ?? null);
   }
@@ -166,7 +237,7 @@ function createStage(): Stage {
       tip.style.opacity = label ? '1' : '0';
     });
     viewer.setTheme(isDark());
-    viewer.setInsets({ left: 150, right: 340, top: 0, bottom: 110 });
+    paintPanels();
     viewer.ready
       .then((kind) => {
         badge.textContent = kind === 'webgpu' ? 'WebGPU' : 'WebGL 2';
@@ -197,7 +268,14 @@ function createStage(): Stage {
   on('selected', refresh);
   on('lens', refresh);
   on('conditions', refresh);
-  on('pick', paintInspector);
+  on('pick', () => {
+    // picking something opens its card
+    if (state.pick && !cardOpen) {
+      cardOpen = true;
+      paintPanels();
+    }
+    paintInspector();
+  });
   on('theme', () => {
     viewer?.setTheme(isDark());
     paintModel();
@@ -218,6 +296,11 @@ function createStage(): Stage {
     },
     preset: (p) => {
       if (state.view === '3d') viewer?.preset(p);
+    },
+    setRail: (w) => {
+      if (work && work !== w) work.classList.remove('rail-hidden');
+      work = w;
+      paintPanels();
     },
     setBanner: (b) => bannerSlot.replaceChildren(...(b ? [b] : [])),
     focus: (id) => {

@@ -1,5 +1,6 @@
 /* Step 1: one sentence in, three designs out. The dials mirror what was understood and can be nudged. */
-import { fmtPower, readBrief } from '../engine/brief';
+import { aegisInfo, readBriefWithModel } from '../aegis';
+import { fmtPower, mergeReading, readBrief } from '../engine/brief';
 import type { Basis, Redundancy } from '../engine/types';
 import { state } from '../state';
 import { ICONS, h } from './dom';
@@ -62,9 +63,11 @@ export function describeScreen(onGenerate: (brief: string, basis: Basis) => void
     cool.paint();
     pow.paint();
   };
-  const paintUnderstood = (items: string[]) => {
+  const paintUnderstood = (items: string[], byModel: string[] = []) => {
     understood.replaceChildren(
-      ...(items.length ? items.map((t) => h('span', { class: 'tag' }, t)) : [h('span', { class: 'tag grey' }, 'Type a sentence or use the dials below')])
+      ...(items.length
+        ? items.map((t) => h('span', { class: byModel.includes(t) ? 'tag model' : 'tag', title: byModel.includes(t) ? 'Read by Nemotron' : null }, t))
+        : [h('span', { class: 'tag grey' }, 'Type a sentence or use the dials below')])
     );
   };
   const readText = () => {
@@ -98,14 +101,30 @@ export function describeScreen(onGenerate: (brief: string, basis: Basis) => void
   price.addEventListener('change', syncText);
 
   area.addEventListener('input', readText);
-  const go = () => {
-    if (!area.value.trim()) return;
+  const go = async () => {
+    const text = area.value.trim();
+    if (!text) return;
     send.disabled = true;
+    let use = basis;
+    state.readBy = null;
+    // Nemotron (through the AegisPlan server) fills in what the sentence implies but doesn't state.
+    // Numbers the person typed or set on the dials always win; with no server this is skipped instantly.
+    const info = await aegisInfo();
+    if (info?.briefModel) {
+      thinking.replaceChildren(h('span', { class: 'spinner' }), 'Nemotron is reading your brief…');
+      const r = await readBriefWithModel(text);
+      if (r) {
+        const merged = mergeReading(readBrief(text), r.reading);
+        use = merged.basis;
+        state.readBy = { model: r.model, added: merged.added, notes: r.reading.notes ?? '', ms: r.ms };
+        paintUnderstood([...readBrief(text).understood, ...merged.added], merged.added);
+      }
+    }
     thinking.replaceChildren(h('span', { class: 'spinner' }), 'Designing three options…');
     // let the spinner paint before the (fast, synchronous) design work
     requestAnimationFrame(() =>
       setTimeout(() => {
-        onGenerate(area.value.trim(), basis);
+        onGenerate(text, use);
         thinking.replaceChildren();
         send.disabled = false;
       }, 30)
@@ -114,10 +133,10 @@ export function describeScreen(onGenerate: (brief: string, basis: Basis) => void
   area.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter' && !ev.shiftKey) {
       ev.preventDefault();
-      go();
+      void go();
     }
   });
-  send.addEventListener('click', go);
+  send.addEventListener('click', () => void go());
   readText();
 
   return h(

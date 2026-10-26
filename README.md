@@ -36,6 +36,8 @@ AEGIS_CHAT_MODEL=<model id>                             # optional: any OpenAI-c
 
 The key stays on the server (`/api/chat` proxies and streams); the browser runs the tools. See `aegis/aegisplan/chat.py`.
 
+With the server running, the studio also uses AegisPlan for the building itself (`aegis/aegisplan/datacenter.py`): Nemotron reads the brief (`/api/dc/brief`, filling in what the sentence implies; numbers you type always win) and CP-SAT proves the room layout (`/api/dc/check`: no overlaps, every door joins rooms that touch, and no shorter building fits). Each design downloads as OpenUSD for Omniverse or as JSON with every number.
+
 Demo script: [docs/DEMO.md](docs/DEMO.md). Measured benchmark: [docs/BENCHMARK.md](docs/BENCHMARK.md) (`make bench`).
 
 Or run each half on its own:

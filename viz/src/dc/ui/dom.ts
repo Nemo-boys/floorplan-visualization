@@ -50,5 +50,10 @@ export const ICONS = {
   play: icon('<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>'),
   pause: icon('<path d="M8 5v14M16 5v14" stroke-width="3"/>'),
   wrench: icon('<path d="M14.5 6.5a4 4 0 0 1 5.3-3.1l-2.7 2.7 1.8 1.8 2.7-2.7a4 4 0 0 1-5.1 5.3L8 19a2 2 0 0 1-3-3z"/>'),
+  sidebar: icon('<rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M9 4.5v15"/>'),
+  expand: icon('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
+  collapse: icon('<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>'),
+  chevronUp: icon('<path d="M6 15l6-6 6 6"/>'),
+  chevronDown: icon('<path d="M6 9l6 6 6-6"/>'),
   reset: icon('<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5"/>')
 };

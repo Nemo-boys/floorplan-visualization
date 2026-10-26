@@ -1,12 +1,13 @@
 /* Chat panel. Uses the host app's tokens only: --surface, --surface-2, --glass, --ink, --ink-2, --ink-3, --line,
    --line-2, --accent, --accent-ink, --accent-soft, --ok, --down, --shadow, --radius. */
 .chat {
-  width: 0; min-width: 0; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto auto;
+  width: 0; min-width: 0; overflow: hidden; overflow: clip; display: grid; grid-template-rows: auto 1fr auto auto;
   background: var(--surface-2); border-left: 1px solid transparent;
   transition: width 0.28s cubic-bezier(0.3, 0.7, 0.2, 1), border-color 0.28s;
 }
 .chat.open { width: 384px; border-left-color: var(--line); }
 .chat > * { width: 384px; }
+.chat > .chat-compose { width: 360px; } /* 384 less its side margins */
 .chat-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 10px 18px; border-bottom: 1px solid var(--line); }
 .chat-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .chat-title b { font-size: 16px; letter-spacing: -0.015em; }

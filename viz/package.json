@@ -18,10 +18,10 @@
     "test": "vitest run",
     "test:e2e": "playwright test --pass-with-no-tests",
     "capture:reference": "tsx tests/visual/capture.ts http://localhost:5174/reference.html tests/visual/reference",
-    "test:visual": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output && tsx tests/visual/compare.ts",
+    "test:visual": "tsx tests/visual/capture.ts http://localhost:5173/?look=reference tests/visual/output && tsx tests/visual/compare.ts",
     "golden:check": "node tools/make-golden.mjs --check",
-    "test:visual:webgpu": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output/chrome-webgpu --chrome && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgpu tests/visual/diff/chrome-webgpu",
-    "test:visual:webgl": "tsx tests/visual/capture.ts http://localhost:5173/ tests/visual/output/chrome-webgl --chrome --no-webgpu && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgl tests/visual/diff/chrome-webgl",
+    "test:visual:webgpu": "tsx tests/visual/capture.ts http://localhost:5173/?look=reference tests/visual/output/chrome-webgpu --chrome && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgpu tests/visual/diff/chrome-webgpu",
+    "test:visual:webgl": "tsx tests/visual/capture.ts http://localhost:5173/?look=reference tests/visual/output/chrome-webgl --chrome --no-webgpu && tsx tests/visual/compare.ts tests/visual/reference tests/visual/output/chrome-webgl tests/visual/diff/chrome-webgl",
     "test:perf": "tsx tests/perf/tour-fps.ts",
     "perf:startup": "tsx tests/perf/startup.ts"
   },

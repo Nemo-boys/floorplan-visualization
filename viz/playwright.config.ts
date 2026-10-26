@@ -8,7 +8,7 @@ export default defineConfig({
   outputDir: 'test-results',
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
-    baseURL: reference ? 'http://localhost:5174/reference.html' : 'http://localhost:5173/',
+    baseURL: reference ? 'http://localhost:5174/reference.html' : 'http://localhost:5173/?look=reference',
     reducedMotion: 'reduce'
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
@@ -18,5 +18,5 @@ export default defineConfig({
         url: 'http://localhost:5174/reference.html',
         reuseExistingServer: true
       }
-    : { command: 'FI_OFFLINE=1 npx vite', url: 'http://localhost:5173/', reuseExistingServer: true }
+    : { command: 'FI_OFFLINE=1 VITE_FI_LOOK=reference npx vite', url: 'http://localhost:5173/', reuseExistingServer: true }
 });

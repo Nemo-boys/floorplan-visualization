@@ -1,0 +1,231 @@
+/* The clinic in the studio look: the same quiet surfaces, pill controls and glass overlays as Data Center Studio,
+   with its own theme (teal for care, where the data center is blue). Everything is scoped to :root.studio, so
+   ?look=reference shows the approved design untouched (deviations.md #10). Ids, classes and numbers are the
+   reference's; only how they look changes. */
+
+/* ---------- tokens ---------- */
+:root.studio {
+  color-scheme: light;
+  --bg: #f5f5f7; --sky: #e8eef1; --horizon: #f5f5f7; --ground: #e4e7e3;
+  --panel: #ffffff; --card: #ffffff; --field: #ffffff; --glass: rgba(255, 255, 255, 0.8);
+  --ink: #1d1d1f; --ink-2: #6e6e73; --ink-3: #a1a1a6;
+  --rule: rgba(0, 0, 0, 0.08); --rule-2: rgba(0, 0, 0, 0.14);
+  --accent: #0a7c74; --accent-ink: #ffffff; --accent-soft: rgba(10, 124, 116, 0.1);
+  --staff: #5856d6; --egress: #e5332a; --warn: #c77700; --pass: #1f9d55; --fail: #e5332a;
+  --z-public: #d5e7f6; --z-clinical: #d3ede0; --z-staff: #f4e7c3; --z-support: #e5ddf3; --z-circulation: #eeeff0;
+  --r-patient: #0a7c74; --r-nurse: #5856d6; --r-provider: #c2399a; --r-reception: #8e8e93;
+  --focus: #0a7c74;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.07);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  /* the shared assistant panel reads these */
+  --surface: #ffffff; --surface-2: #fbfbfd; --line: rgba(0, 0, 0, 0.08); --line-2: rgba(0, 0, 0, 0.14);
+  --ok: #1f9d55; --down: #e5332a; --radius: 18px;
+  --fill: rgba(120, 120, 128, 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root.studio:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #000000; --sky: #14191c; --horizon: #08090a; --ground: #121517;
+    --panel: #1c1c1e; --card: #1c1c1e; --field: #2c2c2e; --glass: rgba(28, 28, 30, 0.78);
+    --ink: #f5f5f7; --ink-2: #a1a1a6; --ink-3: #6e6e73;
+    --rule: rgba(255, 255, 255, 0.1); --rule-2: rgba(255, 255, 255, 0.18);
+    --accent: #3cc8bb; --accent-ink: #00201d; --accent-soft: rgba(60, 200, 187, 0.16);
+    --staff: #8e8cff; --egress: #ff6b5e; --warn: #ffb340; --pass: #32d74b; --fail: #ff453a;
+    --z-public: #213a4f; --z-clinical: #1f4233; --z-staff: #4d4224; --z-support: #3a3250; --z-circulation: #26292c;
+    --r-patient: #3cc8bb; --r-nurse: #8e8cff; --r-provider: #ff7ad1; --r-reception: #a1a1a6;
+    --focus: #3cc8bb;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.45);
+    --surface: #1c1c1e; --surface-2: #141416; --line: rgba(255, 255, 255, 0.1); --line-2: rgba(255, 255, 255, 0.18);
+    --ok: #32d74b; --down: #ff453a;
+  }
+}
+:root.studio[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000; --sky: #14191c; --horizon: #08090a; --ground: #121517;
+  --panel: #1c1c1e; --card: #1c1c1e; --field: #2c2c2e; --glass: rgba(28, 28, 30, 0.78);
+  --ink: #f5f5f7; --ink-2: #a1a1a6; --ink-3: #6e6e73;
+  --rule: rgba(255, 255, 255, 0.1); --rule-2: rgba(255, 255, 255, 0.18);
+  --accent: #3cc8bb; --accent-ink: #00201d; --accent-soft: rgba(60, 200, 187, 0.16);
+  --staff: #8e8cff; --egress: #ff6b5e; --warn: #ffb340; --pass: #32d74b; --fail: #ff453a;
+  --z-public: #213a4f; --z-clinical: #1f4233; --z-staff: #4d4224; --z-support: #3a3250; --z-circulation: #26292c;
+  --r-patient: #3cc8bb; --r-nurse: #8e8cff; --r-provider: #ff7ad1; --r-reception: #a1a1a6;
+  --focus: #3cc8bb;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --surface: #1c1c1e; --surface-2: #141416; --line: rgba(255, 255, 255, 0.1); --line-2: rgba(255, 255, 255, 0.18);
+  --ok: #32d74b; --down: #ff453a;
+}
+
+/* ---------- type ---------- */
+.studio body { font: 14.5px/1.47 Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif; letter-spacing: -0.01em; }
+.studio h2, .studio h3 { letter-spacing: -0.02em; font-weight: 650; }
+.studio button:focus-visible, .studio input:focus-visible, .studio select:focus-visible, .studio textarea:focus-visible, .studio [tabindex]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* ---------- top bar ---------- */
+.studio .topbar {
+  height: 56px; padding: 0 16px; gap: 16px; border-bottom: 1px solid var(--rule);
+  background: var(--glass); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+.studio .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.studio .brand > div { min-width: 0; }
+.studio .brand h1 { font-size: 15px; font-weight: 650; letter-spacing: -0.015em; }
+.studio .brand p { font-size: 12px; margin: 0; }
+.studio .brand b { font-weight: 550; }
+.studio .brand .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--ink); flex: none; display: grid; place-items: center; }
+.studio .brand .logo svg { width: 16px; height: 16px; }
+.studio .stepper { gap: 2px; padding: 3px; border-radius: 999px; background: var(--fill); border: 0; }
+.studio .stepper .glider { top: 3px; bottom: 3px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-sm), 0 2px 8px rgba(0, 0, 0, 0.06); }
+.studio .stepper button { padding: 6px 16px 6px 8px; border-radius: 999px; font-weight: 500; font-size: 14px; gap: 7px; }
+.studio .stepper button[aria-selected="true"] { font-weight: 600; }
+.studio .stepper .num { width: 19px; height: 19px; font-size: 11px; font-weight: 600; background: var(--rule-2); }
+.studio .stepper button.done .num { background: var(--ink-2); color: var(--bg); }
+.studio .stepper button[aria-selected="true"] .num { background: var(--accent); color: var(--accent-ink); }
+.studio .badge { border: 0; background: transparent; color: var(--ink-3); font-size: 11px; font-weight: 600; letter-spacing: 0.02em; padding: 0 4px; }
+.studio .icon-btn {
+  height: 34px; min-width: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; font-size: 14px; cursor: pointer; position: relative;
+}
+.studio .icon-btn svg { width: 17px; height: 17px; }
+.studio .icon-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.studio .icon-btn .unread { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--down); color: #fff; font-size: 10.5px; font-weight: 700; display: none; place-items: center; }
+.studio .icon-btn .unread.on { display: grid; }
+/* the reference's drawer button and drawer give way to the shared assistant */
+.studio #assistantBtn, .studio #assistant { display: none !important; }
+
+/* ---------- buttons and controls ---------- */
+.studio .btn { border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 550; font-size: 14px; background: var(--fill); color: var(--ink); transition: transform 0.12s, background 0.2s, opacity 0.2s; }
+.studio .btn:hover:not(:disabled) { background: rgba(120, 120, 128, 0.2); }
+.studio .btn:active:not(:disabled) { transform: scale(0.98); }
+.studio .btn.primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.studio .btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, var(--ink)); }
+.studio .btn.small { padding: 5px 12px; font-size: 13px; }
+.studio .btn.ghost { background: transparent; color: var(--accent); }
+.studio .btn.big { padding: 12px 22px; font-size: 15.5px; }
+.studio .seg { border-radius: 999px; padding: 3px; gap: 2px; background: var(--fill); }
+.studio .seg button { border-radius: 999px; padding: 5px 13px; font-weight: 500; color: var(--ink-2); }
+.studio .seg button:hover { background: transparent; color: var(--ink); }
+.studio .seg button[aria-pressed="true"], .studio .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm), 0 2px 6px rgba(0, 0, 0, 0.06); font-weight: 600; }
+.studio .seg.glassbox { background: var(--glass); }
+.studio .seg.glassbox button[aria-pressed="true"] { background: var(--ink); color: var(--bg); box-shadow: none; }
+.studio .seg.full button { flex: 1; }
+.studio .textfield, .studio select, .studio input[type="text"], .studio input[type="number"], .studio input[type="time"] { border-radius: 10px; border-color: var(--rule-2); }
+.studio input[type="checkbox"], .studio input[type="range"] { accent-color: var(--accent); }
+
+/* ---------- surfaces ---------- */
+.studio .workspace { gap: 12px; padding: 12px 16px 16px; }
+.studio .card { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow); }
+.studio .glassbox { background: var(--glass); border: 1px solid var(--rule); box-shadow: var(--shadow-sm), 0 6px 20px rgba(0, 0, 0, 0.06); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+.studio .iconbtn.glassbox { border-radius: 999px; }
+.studio .toast { border-radius: 999px; padding: 10px 18px; }
+.studio .modal { border-radius: 22px; }
+
+/* ---------- Import ---------- */
+.studio #importView .page { max-width: 980px; }
+.studio #importView h2, .studio #exportView h2 { font-size: clamp(30px, 4vw, 44px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; }
+.studio .lede { font-size: 17px; color: var(--ink-2); }
+.studio .sample { border-radius: 16px; border: 1px solid var(--rule); background: var(--card); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.studio .sample:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); transform: translateY(-1px); }
+.studio .filedrop { border-radius: 14px; }
+.studio .file { border-radius: 12px; }
+
+/* ---------- Review ---------- */
+.studio .reviewbar { border-radius: var(--radius); background: var(--panel); border: 1px solid var(--rule); box-shadow: var(--shadow); padding: 10px 12px 10px 16px; }
+.studio .rb-text b { font-size: 15px; font-weight: 650; letter-spacing: -0.015em; }
+.studio .app.editing #editToggle { background: var(--accent-soft); color: var(--accent); }
+.studio .pane.card { overflow: hidden; }
+.studio .viewbar { top: 14px; left: 14px; }
+.studio .viewhint { top: 60px; left: 18px; }
+.studio .zoom { top: 14px; right: 14px; }
+.studio .roomcard, .studio .caption { border-radius: 20px; }
+.studio .tools section h2 { font-size: 15px; }
+.studio .versions li { border-radius: 12px; }
+
+/* ---------- Simulate ---------- */
+.studio .simbar { border-radius: var(--radius); padding: 8px 10px; }
+.studio .simtabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+.studio .simtabs button[aria-selected="true"] .count { background: var(--accent-soft); color: var(--accent); }
+.studio .preset { border: 1px solid var(--rule); border-radius: 999px; }
+.studio .preset.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.studio .daywrap { background: var(--panel); }
+.studio .bcard { border-radius: 14px; }
+.studio .pchip { border-radius: 12px; }
+.studio .chkstatus { border-radius: 14px; }
+.studio .transport { border-radius: var(--radius); }
+.studio .transport .play { background: var(--accent); color: var(--accent-ink); }
+.studio .kpi, .studio .rgrid > * { border-radius: 12px; }
+.studio .hlist > li { border-radius: 14px; }
+
+/* Quick setup: the Scenario tab opens on four questions, with the block builder one click away */
+.studio .quick { display: none; }
+.studio .app.sim-quick .quick { display: block; }
+.studio .app.sim-quick #presetRow, .studio .app.sim-quick #scnSections { display: none; }
+@media (min-width: 861px) {
+  .studio .app.sim-quick.step-simulate.sim-scenario .workspace { grid-template-columns: minmax(0, 1fr) 320px; grid-template-areas: "sbar sbar" "canvas check"; }
+}
+.studio .app.sim-quick.step-simulate.sim-scenario #palette { display: none; }
+@media (min-width: 861px) { .studio .app.sim-quick.hide-right.step-simulate.sim-scenario .workspace { grid-template-columns: minmax(0, 1fr) 0; } }
+.studio .app.sim-quick .edge-tab.left { display: none !important; }
+.studio .app.sim-quick.hide-left #scnCanvas { margin-left: 0; }
+.studio .quick { padding: 22px 6px 6px; }
+.studio .quick h2 { font-size: 26px; letter-spacing: -0.03em; font-weight: 700; margin: 0; }
+.studio .quick > p { margin: 4px 0 16px; color: var(--ink-2); font-size: 15px; }
+.studio .q-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.studio .q-tile {
+  text-align: left; border: 1px solid var(--rule); background: var(--card); border-radius: 16px; padding: 14px 14px 12px; cursor: pointer;
+  display: grid; gap: 4px; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.studio .q-tile:hover { border-color: var(--rule-2); }
+.studio .q-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.studio .q-tile b { font-size: 15px; letter-spacing: -0.015em; display: flex; align-items: center; gap: 8px; }
+.studio .q-tile b em { font-style: normal; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.studio .q-tile span { font-size: 13px; color: var(--ink-2); }
+.studio .q-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 22px 0 10px; }
+.studio .q-head h3 { font-size: 17px; }
+.studio .q-head span { font-size: 13px; color: var(--ink-2); }
+.studio .q-dials { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.studio .q-dial { background: var(--surface-2); border: 1px solid var(--rule); border-radius: 16px; padding: 12px 12px 10px 14px; display: grid; gap: 6px; }
+.studio .q-dial label { font-size: 13px; font-weight: 550; color: var(--ink-2); display: flex; align-items: center; gap: 7px; }
+.studio .q-dial label i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.studio .q-step { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.studio .q-step output { font-size: 26px; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: center; }
+.studio .q-step button { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--fill); color: var(--ink); font-size: 19px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.studio .q-step button:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
+.studio .q-step button:disabled { opacity: 0.35; cursor: default; }
+.studio .q-dial small { font-size: 12px; color: var(--ink-3); }
+.studio .q-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 20px 0 6px; flex-wrap: wrap; }
+.studio .q-foot p { margin: 0; font-size: 13px; color: var(--ink-2); }
+.studio .q-mode { margin: 14px 0 4px; display: flex; justify-content: flex-end; }
+.studio .app:not(.sim-quick) .q-mode { position: sticky; top: 0; z-index: 4; margin: 0; padding-top: 10px; }
+.studio .app.sim-quick .q-mode { display: none; }
+
+/* ---------- Export ---------- */
+.studio .out { border-radius: var(--radius); }
+.studio .final { border-radius: var(--radius); }
+
+/* ---------- side panel tabs (deviations.md #9) in this look ---------- */
+.studio .edge-tab { background: var(--glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-color: var(--rule); }
+
+/* ---------- the shared assistant, docked on the right ---------- */
+.studio .chat { position: fixed; top: 56px; right: 0; bottom: 0; z-index: 30; box-shadow: none; }
+.studio .chat.open { box-shadow: -12px 0 40px rgba(0, 0, 0, 0.06); }
+.studio .app.chat-open .workspace { padding-right: 400px; }
+.studio .app.chat-open .edge-tab.right { right: 384px; }
+@media (max-width: 860px) {
+  .studio .topbar { height: auto; padding: 8px 12px; }
+  .studio .brand small, .studio .badge { display: none; }
+  .studio .icon-btn .label { display: none; }
+  .studio .app.chat-open .workspace { padding-right: 16px; }
+  .studio .chat { top: 0; }
+  .studio .app.sim-quick #scnCanvas { overflow: visible; min-height: min-content; }
+  .studio .quick > p { font-size: 14px; }
+  .studio .chat.open { width: 100%; }
+}
+
+/* the assistant's preview drops from its button, clear of the 3D view's own controls */
+.studio .chat-peek { top: 64px; bottom: auto; transform-origin: top right; }
+.studio #runBtn { width: 100%; justify-content: center; }
+.studio .modal, .studio .toast { z-index: 45; }
+.studio .chat, .studio .chat *, .studio .chat-peek, .studio .chat-peek *, .studio .quick * { box-sizing: border-box; }
+.studio .app.chat-open .viewhint { display: none; }
+.studio .ticks span, .studio .tl-ticks span { white-space: nowrap; }
+/* the reference's drawer styles .msg too; inside the shared panel its own rules apply */
+.studio .chat .msg { max-width: none; padding: 0; border: 0; background: none; border-radius: 0; font-size: inherit; white-space: normal; align-self: stretch; }

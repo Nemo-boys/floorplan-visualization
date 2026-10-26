@@ -1,5 +1,7 @@
+import './ui/studio/look';
 import './styles';
 import './integration/pipeline.css';
+import './ui/studio/studio.css';
 import { init } from './ui/app';
 import { exposeTestHooks } from './ui/test-hooks';
 

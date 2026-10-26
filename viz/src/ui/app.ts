@@ -27,6 +27,7 @@ import { dayDone, dayRange, drawTimeline, resetSim, seek, updateLive, updateTran
 import { importPlan } from './versions';
 import { initPipeline } from './pipeline';
 import { initPanelToggles } from './panels';
+import { initStudio } from './studio';
 
 export function bindUI(): void {
   document
@@ -326,6 +327,7 @@ export async function init(): Promise<void> {
   rendererNote();
   updatePlanHeader();
   initPanelToggles();
+  initStudio();
   setStep('import');
   document.querySelectorAll<HTMLButtonElement>('[data-step]').forEach(b => {
     if (b.dataset.step !== 'import') b.disabled = true;

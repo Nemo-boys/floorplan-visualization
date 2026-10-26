@@ -1,6 +1,6 @@
 # Demo script (clinic)
 
-About 3 minutes. Everything runs on one laptop: `make dev`, then Chrome at http://127.0.0.1:8000. The datacenter beat is added in Step 6 (see [DATACENTER.md](DATACENTER.md)).
+About 3 minutes. Everything runs on one laptop: `make dev`, then Chrome at http://127.0.0.1:8000. The datacenter beat is added in Step 6 (see [DATACENTER.md](../handoff/DATACENTER.md)).
 
 ## Before recording
 

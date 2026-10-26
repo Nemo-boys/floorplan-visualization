@@ -9,7 +9,7 @@ Brief in, building out. A local Nemotron model drafts floor plans, OR-Tools CP-S
 | [`contracts/`](contracts/) | How the two halves' plan formats map |
 | [`docs/`](docs/) | Datacenter design and other docs |
 
-**Plan and status: [PLAN.md](PLAN.md).** Datacenter extension: [docs/DATACENTER.md](docs/DATACENTER.md).
+**Plan and status: [PLAN.md](PLAN.md).** New session? Start at [handoff/](handoff/README.md). Datacenter extension: [handoff/DATACENTER.md](handoff/DATACENTER.md).
 
 ## Quick start
 

@@ -4,7 +4,7 @@ AegisPlan (2D generation, validation and repair) and the 3D viewer (review, simu
 
 Built for the Nebius × NVIDIA Global AI Hackathon 2026. **Submissions close Fri Oct 30, 2026, 10:00 am PDT.**
 
-- Datacenter design: [docs/DATACENTER.md](docs/DATACENTER.md)
+- Datacenter design: [handoff/DATACENTER.md](handoff/DATACENTER.md)
 - Format mapping between the two halves: [contracts/plan-mapping.md](contracts/plan-mapping.md)
 - Research brief this follows: `Floorplan-Intelligence-Research.html` (team folder, not in this repo)
 
@@ -66,7 +66,8 @@ floorplan-visualization/
 ├─ viz/               the viewer, imported with git subtree (history kept)
 ├─ contracts/         plan-mapping.md (how the two formats map); later the domain-pack schema
 ├─ domains/           (Step 6) domain packs: clinic/, datacenter/
-└─ docs/              DATACENTER.md, later the demo script and benchmarks
+├─ docs/              DEMO.md (demo script), BENCHMARK.md (measured)
+└─ handoff/           start here in a new session; DATACENTER.md (design)
 ```
 
 **Runtime target (Step 3):** FastAPI serves the built `viz/dist` at `/` and the API at `/api/*`. That means one process, one port, no CORS, and `make dev` for the demo. The viewer still works as a static site: if the API is unreachable, it falls back to upload and the bundled samples.
@@ -152,7 +153,7 @@ This is the strongest part of the demo.
 
 ### Step 6: Domain packs, then datacenter 🔜
 
-See [docs/DATACENTER.md](docs/DATACENTER.md).
+See [handoff/DATACENTER.md](handoff/DATACENTER.md).
 
 - In short: refactor the hard-coded clinic tables into `domains/clinic/`, then add `domains/datacenter/`.
 - Generation works at two levels:

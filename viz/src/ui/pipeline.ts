@@ -2,13 +2,26 @@
    Shown only when the AegisPlan API answers on /api (served by it, or proxied by `npm run dev`). Without it, the
    pipeline card keeps the design's stand-in, so the static app and its tests are unchanged. */
 import type { PlanJson } from '../engine';
+import { state } from '../state';
+import { setConflict } from './conflicts';
+import { syncEditMarks } from './edit';
+import { commitVersion } from './versions';
 import { $, esc } from './dom';
 import { importPlan } from './versions';
 
 interface Health {
   model?: { available: boolean; gguf: string | null };
 }
+/* AegisPlan's own plan document for each generated plan.json, so edits can go back to it. */
+type AegisPlan = Record<string, unknown>;
+const aegisPlans = new WeakMap<PlanJson, AegisPlan>();
+function currentAegisPlan(): AegisPlan | null {
+  const v = state.versions[state.vIndex];
+  return (v && v.baseJson && aegisPlans.get(v.baseJson)) || null;
+}
+
 export interface Candidate {
+  plan: AegisPlan;
   rank: number;
   source: 'nemotron' | 'fallback';
   solver_status: string;
@@ -113,6 +126,16 @@ async function generate(): Promise<void> {
   }
 }
 
+/* The candidates from the same request as the current plan, other than itself; null for any other plan. */
+export function otherCandidates(): PlanJson[] | null {
+  const rank = state.json?.provenance?.rank;
+  if (state.source !== 'pipeline' || typeof rank !== 'number' || pipeline.candidates.length < 2) return null;
+  if (!pipeline.candidates.some(c => c.viz_plan.provenance?.rank === rank)) return null;
+  return pipeline.candidates
+    .filter(c => c.rank !== rank)
+    .map(c => JSON.parse(JSON.stringify(c.viz_plan)) as PlanJson);
+}
+
 function renderCandidates(): void {
   const list = $('#pipeList');
   list.innerHTML = pipeline.candidates
@@ -141,8 +164,104 @@ function renderCandidates(): void {
     .join('');
   list.querySelectorAll<HTMLButtonElement>('[data-candidate]').forEach(b =>
     b.addEventListener('click', () => {
-      const c = pipeline.candidates[Number(b.dataset.candidate)];
-      importPlan({ kind: 'generated', json: JSON.parse(JSON.stringify(c.viz_plan)) as PlanJson });
+      const c = pipeline.candidates[Number(b.dataset.candidate)],
+        json = JSON.parse(JSON.stringify(c.viz_plan)) as PlanJson;
+      aegisPlans.set(json, c.plan);
+      importPlan({ kind: 'generated', json });
     })
   );
+}
+
+/* ---------- Bigger changes: plain-language edits solved again by AegisPlan ---------- */
+const DEFAULT_EDIT = 'Make the waiting room 20% bigger, keep the restrooms fixed';
+
+/* The “Bigger changes” button shows only for a generated plan while the pipeline answers. */
+export function syncAskBigger(): void {
+  const btn = document.querySelector<HTMLButtonElement>('#askBigger');
+  if (!btn) return;
+  const on = pipeline.online && !!currentAegisPlan();
+  btn.hidden = !on;
+  const form = document.querySelector<HTMLElement>('#editForm');
+  if (form && !on) form.hidden = true;
+  if (!on || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  btn.textContent = 'Ask the plan generator';
+  btn.closest('.row')?.insertAdjacentHTML(
+    'afterend',
+    '<form class="pipeform" id="editForm" hidden>' +
+      '<label class="field">Change<textarea id="editText" rows="2">' +
+      esc(DEFAULT_EDIT) +
+      '</textarea></label>' +
+      '<button type="submit" class="btn primary" id="editGo">Send to the generator</button>' +
+      '<p class="small muted" id="editStatus" role="status"></p>' +
+      '</form>'
+  );
+  btn.addEventListener('click', () => {
+    const f = $('#editForm');
+    f.hidden = !f.hidden;
+    if (!f.hidden) $<HTMLTextAreaElement>('#editText').focus();
+  });
+  $<HTMLFormElement>('#editForm').addEventListener('submit', e => {
+    e.preventDefault();
+    void sendEdit();
+  });
+}
+
+interface EditAnswer {
+  status: string;
+  summary: string;
+  explanation: string;
+  conflict_rooms: string[];
+  solve_time_ms: number;
+  plan: AegisPlan;
+  viz_plan: PlanJson | null;
+}
+
+async function sendEdit(): Promise<void> {
+  const plan = currentAegisPlan(),
+    text = $<HTMLTextAreaElement>('#editText').value.trim(),
+    status = $('#editStatus'),
+    go = $<HTMLButtonElement>('#editGo');
+  if (!plan || !text || pipeline.busy) return;
+  pipeline.busy = true;
+  go.disabled = true;
+  status.textContent = 'Solving…';
+  try {
+    const res = await fetch('/api/edit_text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan, text, name: state.json?.name || '' })
+    });
+    if (!res.ok) throw new Error('the server answered ' + res.status);
+    const a = (await res.json()) as EditAnswer;
+    if (a.viz_plan) {
+      const json = a.viz_plan,
+        before = state.json?.provenance || {};
+      json.provenance = Object.assign({}, json.provenance, {
+        brief: before.brief,
+        source: before.source,
+        rank: before.rank,
+        edit: text
+      });
+      aegisPlans.set(json, a.plan);
+      setConflict([]);
+      commitVersion(a.summary, nv => {
+        nv.baseJson = json;
+        nv.spec = null;
+        nv.placed = [];
+      });
+      const pass = state.checks.filter(c => c.pass).length;
+      status.textContent =
+        a.summary + '. Solved in ' + a.solve_time_ms + ' ms; ' + pass + ' of ' + state.checks.length + ' checks pass.';
+    } else {
+      setConflict(a.conflict_rooms);
+      syncEditMarks();
+      status.textContent = a.explanation;
+    }
+  } catch (err) {
+    status.textContent = 'The generator didn’t answer: ' + (err as Error).message + '.';
+  } finally {
+    pipeline.busy = false;
+    go.disabled = false;
+  }
 }

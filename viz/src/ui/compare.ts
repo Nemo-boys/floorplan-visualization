@@ -15,6 +15,7 @@ import {
 import { state, type CompareRow } from '../state';
 import { $, esc } from './dom';
 import { SAMPLES } from './import';
+import { otherCandidates } from './pipeline';
 
 export function headlessDay(P: PreparedPlan, sc?: SimScenario): Metrics {
   const sim = new ClinicSim(P.m, P.g, P.pf, P.info, sc || state.scenario, state.seed);
@@ -41,11 +42,19 @@ export function compareRows(sc?: SimScenario): CompareRow[] {
         current: true
       }
     ];
-  for (const k of ['A', 'B', 'C']) {
-    if (v.key === k && state.vIndex === 0 && !Object.keys(v.renames).length) continue;
-    const P = preparePlan(SAMPLES[k], []);
-    rows.push({ name: P.m.name, m: quickMeans(P, sc, 5), info: P.info });
-  }
+  // A generated plan is compared with the pipeline's other candidates, any other plan with the samples.
+  const generated = otherCandidates();
+  if (generated)
+    for (const json of generated) {
+      const P = preparePlan(json, []);
+      rows.push({ name: P.m.name, m: quickMeans(P, sc, 5), info: P.info });
+    }
+  else
+    for (const k of ['A', 'B', 'C']) {
+      if (v.key === k && state.vIndex === 0 && !Object.keys(v.renames).length) continue;
+      const P = preparePlan(SAMPLES[k], []);
+      rows.push({ name: P.m.name, m: quickMeans(P, sc, 5), info: P.info });
+    }
   return rows;
 }
 export function runCompare(): void {

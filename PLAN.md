@@ -121,7 +121,7 @@ Status key: ✅ done · 🔜 next · ⏳ planned
   - Add a small brief form.
 - The Aegis checks fill `state.checks` and call `renderChecks()`, replacing the 5 example checks. That makes Module 2 real.
 
-### Step 4: Close the loop 🔜
+### Step 4: Close the loop ✅ (Oct 25)
 
 This is the strongest part of the demo.
 
@@ -135,7 +135,16 @@ This is the strongest part of the demo.
   - The result returns as a new version (`commitVersion`) with a visible diff.
 - **Show infeasibility.** Highlight the `conflict_core` rooms in red in 3D, with the solver's explanation. This is the "impossible request" moment.
 
-### Step 5: Clinic demo freeze ⏳ (target Tue Oct 27 night)
+**Built:** `aegisplan/edits.py` reads plain-language edits ("Make the waiting room 20% bigger, keep the restrooms fixed"). It holds the edited room at its new size while CP-SAT repairs the rest. An impossible request returns the rooms in the way and the arithmetic, for example "Waiting Area 1 would be 35 m wide, and the building is 24 m wide". Compare uses the request's other candidates.
+
+**End-to-end baseline (viz):**
+- 4 tests fail or flake identically on the untouched import, so they are not regressions:
+  - `export.spec.ts:241` needs the reference server on port 5174, with internet;
+  - the two timeline tests `simulate.spec.ts:95` and `:264`;
+  - the deep links in `shell.spec.ts:52`, which fail about 6 times in 32 runs on both versions.
+- Playwright needs `npx playwright install chromium` (build 1248).
+
+### Step 5: Clinic demo freeze 🔜 (target Tue Oct 27 night)
 
 - Add `make dev`, the README and the demo script.
 - Add a benchmark table from `aegis/benchmark.py` and a cost-per-accepted-plan panel.

@@ -2,6 +2,8 @@
 import { preparePlan, swapInSpec, type LayoutSpec, type Room } from '../engine';
 import { state } from '../state';
 import { highlightRoom, setHoverMark, setRoomMarks, type RoomMark } from '../view3d/marks';
+import { conflictMarks } from './conflicts';
+import { syncAskBigger } from './pipeline';
 import { selectItem, stopPlacing } from '../view3d/placement';
 import { R3 } from '../view3d/r3';
 import { endTour } from '../view3d/tour';
@@ -90,6 +92,7 @@ export function renderPlanHint(): void {
 }
 export function renderEditTools(): void {
   if (!state.P) return;
+  syncAskBigger();
   document
     .querySelectorAll<HTMLElement>('[data-tool]')
     .forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === state.editTool)));
@@ -158,7 +161,7 @@ export function syncEditMarks(): void {
     if (state.editTool === 'rename' && state.renameSel)
       marks.push({ id: state.renameSel, color: MARK.rename, num: null, text: 'Renaming ' + labelOf(state.renameSel) });
   }
-  setRoomMarks(marks);
+  setRoomMarks(marks.concat(conflictMarks()));
   if (!state.editing) setHoverMark(null);
 }
 /* While editing, the room under the pointer lights up in the color it would get if clicked. */

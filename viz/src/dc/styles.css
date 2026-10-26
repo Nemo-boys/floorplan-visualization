@@ -332,8 +332,9 @@ details.more summary::-webkit-details-marker { display: none; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 @media (max-width: 860px) {
-  .bar { grid-template-columns: auto 1fr; }
-  .bar-actions { display: none; }
+  .bar { grid-template-columns: auto 1fr auto; gap: 8px; }
+  .bar-actions > :not(.assistant-btn) { display: none; }
+  .assistant-btn .label { display: none; }
   .steps { justify-self: end; }
   .steps button { padding: 6px 10px; }
   .steps button .label { display: none; }
@@ -526,3 +527,15 @@ table.compare thead th:first-child { width: 34%; }
   .cost-controls .dials { grid-template-columns: 1fr; }
   .cost-controls > .seg.pill { justify-self: stretch; overflow-x: auto; }
 }
+
+/* ---------- assistant ---------- */
+.body { display: flex; min-height: 0; overflow: hidden; }
+.assistant-btn { position: relative; }
+.assistant-btn[aria-pressed='true'] { background: var(--ink); color: var(--bg); border-color: transparent; }
+.assistant-btn .unread {
+  position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 700; display: none; place-items: center;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.assistant-btn .unread.on { display: grid; animation: pop 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes pop { from { transform: scale(0.4); } to { transform: none; } }

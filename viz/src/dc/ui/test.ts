@@ -79,6 +79,18 @@ const SCENARIOS: Scenario[] = [
   }
 ];
 
+/* What the assistant (and anything else outside this screen) can do on the Test step. */
+export interface TestControl {
+  scenarios: { id: string; label: string; hint: string }[];
+  runScenario(id: string): boolean;
+  setBroken(ids: string[], broken: boolean): string[]; // returns the ids that exist
+  fixEverything(): void;
+  setStress(c: { outdoorC?: number; load?: number }): void;
+  sweep(): { kind: EquipKind; count: number; worst: string | null }[];
+  broken(): string[];
+}
+export let testControl: TestControl | null = null;
+
 export function testScreen(): HTMLElement {
   const rail = h('aside', { class: 'rail test-rail', 'aria-label': 'What to try' });
   const slot = h('div', { class: 'stage-slot' });
@@ -200,6 +212,68 @@ export function testScreen(): HTMLElement {
     );
   }
 
+  function runScenario(sc: Scenario, d: Design) {
+    reset();
+    const a = sc.apply(d);
+    failed = new Set(a.failed ?? []);
+    load = a.load ?? 1;
+    outdoorC = a.outdoorC ?? NORMAL.outdoorC;
+    active = sc.id;
+    if (a.focus) {
+      pickUnit(a.focus);
+      getStage().focus(a.focus);
+    }
+    apply();
+  }
+
+  /* Every part of each kind failed one at a time, all at once (well under a second even for air halls). */
+  function sweepNow(d: Design): SweepRow[] {
+    const base = evaluate(d, conditionsAt(hour)).rowsDown;
+    return [...BREAKABLE]
+      .filter((k) => d.equipment.some((e) => e.kind === k))
+      .map((kind) => {
+        const units = d.equipment.filter((e) => e.kind === kind);
+        const worst = units.find((e) => !failed.has(e.id) && evaluate(d, conditionsAt(hour, e.id)).rowsDown > base)?.id ?? null;
+        return { kind, count: units.length, worst, done: true };
+      });
+  }
+
+  testControl = {
+    scenarios: SCENARIOS.map(({ id, label, hint }) => ({ id, label, hint })),
+    runScenario: (id) => {
+      const sc = SCENARIOS.find((x) => x.id === id);
+      const d = current()?.design;
+      if (!sc || !d) return false;
+      runScenario(sc, d);
+      return true;
+    },
+    setBroken: (ids, broken) => {
+      const d = current()?.design;
+      const ok = ids.filter((id) => id === 'utility_A' || id === 'utility_B' || d?.equipment.some((e) => e.id === id && BREAKABLE.has(e.kind)));
+      ok.forEach((id) => (broken ? failed.add(id) : failed.delete(id)));
+      active = null;
+      sweep = null;
+      apply();
+      return ok;
+    },
+    fixEverything: () => reset(),
+    setStress: (c) => {
+      if (c.outdoorC !== undefined) outdoorC = Math.max(-10, Math.min(55, c.outdoorC));
+      if (c.load !== undefined) load = Math.max(0.1, Math.min(1.5, c.load));
+      active = null;
+      apply();
+    },
+    sweep: () => {
+      const d = current()?.design;
+      if (!d) return [];
+      const rows = sweepNow(d);
+      sweep = { design: d.id, rows };
+      paint();
+      return rows.map(({ kind, count, worst }) => ({ kind, count, worst }));
+    },
+    broken: () => [...failed]
+  };
+
   function scenarioTiles(): HTMLElement {
     const d = current()!.design;
     return h(
@@ -214,19 +288,8 @@ export function testScreen(): HTMLElement {
             'aria-pressed': String(active === sc.id),
             title: sc.hint,
             onclick: () => {
-              const was = active === sc.id;
-              reset();
-              if (was) return;
-              const a = sc.apply(d);
-              failed = new Set(a.failed ?? []);
-              load = a.load ?? 1;
-              outdoorC = a.outdoorC ?? NORMAL.outdoorC;
-              active = sc.id;
-              if (a.focus) {
-                pickUnit(a.focus);
-                getStage().focus(a.focus);
-              }
-              apply();
+              if (active === sc.id) reset();
+              else runScenario(sc, d);
             }
           },
           h('span', { class: 'tile-ic', html: sc.icon }),

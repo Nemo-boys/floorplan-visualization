@@ -16,6 +16,7 @@ from aegisplan.router import GenerationRouter, FEW_SHOT_EXEMPLAR
 from aegisplan.export_viz import to_viz_plan
 from aegisplan.edits import apply_edit
 from aegisplan.gguf_engine import find_gguf_model_path
+from aegisplan.chat import router as chat_router
 
 # The viewer's production build (viz/dist), served at / when it exists.
 VIZ_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "viz", "dist"))
@@ -35,6 +36,8 @@ app.add_middleware(
 )
 
 router = GenerationRouter()
+# The in-app assistants' model proxy (/api/chat).
+app.include_router(chat_router)
 
 
 class GenerateRequest(BaseModel):

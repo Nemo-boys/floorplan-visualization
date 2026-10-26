@@ -1,12 +1,10 @@
 /* Data Center Studio: describe -> design -> test -> cost. Everything runs in the browser. */
 import './styles.css';
+import { generate, go } from './actions';
 import { readBrief } from './engine/brief';
-import { runChecks } from './engine/checks';
-import { costOf } from './engine/cost';
-import { generateOptions } from './engine/design';
-import type { Basis } from './engine/types';
 import { emit, on, state, type Step } from './state';
 import { describeScreen } from './ui/describe';
+import { mountAssistant } from './assistant';
 import { costScreen } from './ui/cost';
 import { testScreen } from './ui/test';
 import { designScreen } from './ui/design';
@@ -18,28 +16,6 @@ const STEPS: { id: Step; label: string }[] = [
   { id: 'test', label: 'Test' },
   { id: 'cost', label: 'Cost' }
 ];
-
-function generate(brief: string, basis: Basis) {
-  state.brief = brief;
-  state.basis = basis;
-  state.options = generateOptions(basis).map((design) => ({ design, cost: costOf(design, state.rates, basis), checks: runChecks(design) }));
-  // Recommend what the brief asked for; otherwise the cheapest to build and run among those passing every check.
-  const match = state.options.findIndex((o) => o.design.profile.key === basis.cooling);
-  const total = (i: number) => state.options[i].cost.facility + state.options[i].cost.opexYear * basis.years;
-  const passing = state.options.map((_, i) => i).filter((i) => state.options[i].checks.every((c) => c.pass));
-  const pool = passing.length ? passing : state.options.map((_, i) => i);
-  state.recommended = match >= 0 ? match : pool.reduce((a, b) => (total(b) < total(a) ? b : a));
-  state.selected = state.recommended;
-  state.pick = null;
-  emit('options');
-  go('design');
-}
-
-function go(step: Step) {
-  if (step !== 'describe' && !state.options.length) return;
-  state.step = step;
-  emit('step');
-}
 
 function themeToggle(): HTMLElement {
   const root = document.documentElement;
@@ -71,6 +47,7 @@ function themeToggle(): HTMLElement {
 
 function mount() {
   const app = document.getElementById('app')!;
+  const assistant = mountAssistant();
   const tabs = h('nav', { class: 'steps', role: 'tablist', 'aria-label': 'Steps' });
   STEPS.forEach((s, i) =>
     tabs.append(
@@ -87,7 +64,7 @@ function mount() {
     { class: 'bar' },
     h('div', { class: 'brand' }, h('span', { class: 'logo', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')), 'Data Center Studio', h('small', {}, 'by Floorplan Intelligence')),
     tabs,
-    h('div', { class: 'bar-actions' }, themeToggle())
+    h('div', { class: 'bar-actions' }, assistant.button, themeToggle())
   );
   const screens: Record<Step, HTMLElement> = {
     describe: describeScreen(generate),
@@ -95,8 +72,9 @@ function mount() {
     test: testScreen(),
     cost: costScreen()
   };
-  const main = h('main', { style: 'min-height:0;display:grid' });
-  app.replaceChildren(bar, main);
+  const main = h('main', { style: 'min-height:0;min-width:0;display:grid;flex:1' });
+  app.replaceChildren(bar, h('div', { class: 'body' }, main, assistant.panel.el));
+  document.body.append(assistant.panel.peek);
 
   const paint = () => {
     tabs.querySelectorAll<HTMLButtonElement>('button').forEach((b) => {

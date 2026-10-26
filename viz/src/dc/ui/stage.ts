@@ -12,6 +12,8 @@ export interface Stage {
   setActions(el: HTMLElement | null): void;
   setInspectorExtra(fn: (() => HTMLElement[]) | null): void;
   setBanner(el: HTMLElement | null): void;
+  setView(v: '3d' | 'plan'): void;
+  preset(p: 'overview' | 'inside' | 'top'): void;
   focus(id: string): void;
   live(): LensData | null;
   refresh(): void;
@@ -209,6 +211,13 @@ function createStage(): Stage {
     setInspectorExtra: (fn) => {
       extra = fn;
       paintInspector();
+    },
+    setView: (v) => {
+      state.view = v;
+      paintView();
+    },
+    preset: (p) => {
+      if (state.view === '3d') viewer?.preset(p);
     },
     setBanner: (b) => bannerSlot.replaceChildren(...(b ? [b] : [])),
     focus: (id) => {

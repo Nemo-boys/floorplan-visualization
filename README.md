@@ -26,6 +26,16 @@ Run the app (viewer + API, uses the local model if it's downloaded):
 make dev        # http://127.0.0.1:8000
 ```
 
+Data Center Studio is at http://127.0.0.1:8000/datacenter. Its assistant answers instantly from the app's own numbers with no model; to give it a real model (Nemotron, with tool calling), start the server with one of:
+
+```bash
+NVIDIA_API_KEY=nvapi-... make dev                       # build.nvidia.com, nvidia/nvidia-nemotron-nano-9b-v2
+AEGIS_CHAT_URL=http://localhost:8001/v1 make dev        # your own vLLM / llama.cpp / NIM serving Nemotron
+AEGIS_CHAT_MODEL=<model id>                             # optional: any OpenAI-compatible model with tools
+```
+
+The key stays on the server (`/api/chat` proxies and streams); the browser runs the tools. See `aegis/aegisplan/chat.py`.
+
 Demo script: [docs/DEMO.md](docs/DEMO.md). Measured benchmark: [docs/BENCHMARK.md](docs/BENCHMARK.md) (`make bench`).
 
 Or run each half on its own:

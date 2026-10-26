@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { chooseRenderer, type AnyRenderer } from '../../view3d/renderer';
+import { DESIGN_AMBIENT_C } from '../engine/status';
 import type { Design, Equip, EquipKind, Rect, Room, RoomType } from '../engine/types';
 import { colorFor, type LensData } from '../ui/lens';
 import {
@@ -32,6 +33,7 @@ export interface Viewer {
   zoom(factor: number): void;
   setTheme(dark: boolean): void;
   setInsets(i: Insets): void;
+  focus(id: string): void;
   invalidate(): void;
 }
 export interface Insets {
@@ -132,6 +134,29 @@ const unitBox = (() => {
   return g;
 })();
 
+const ringGeo = (() => {
+  const g = new THREE.RingGeometry(0.86, 1, 48);
+  g.rotateX(-Math.PI / 2);
+  return g;
+})();
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+const beamGeo = (() => {
+  const g = new THREE.CylinderGeometry(0.12, 0.45, 1, 16, 1, true);
+  g.translate(0, 0.5, 0);
+  return g;
+})();
+const beamMat = new THREE.MeshBasicMaterial({ color: 0xff453a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+const dotGeo = new THREE.IcosahedronGeometry(0.045, 0);
+const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+interface Flow {
+  mesh: THREE.InstancedMesh;
+  paths: Float32Array;
+  cold: Float32Array;
+  hot: Float32Array;
+  n: number;
+  speed: number;
+}
+
 const FACING_ROT: Record<string, number> = { S: 0, N: Math.PI, E: Math.PI / 2, W: -Math.PI / 2 };
 
 interface KindMesh {
@@ -165,6 +190,9 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
   let heatGroup: THREE.Group | null = null;
   let powerGroup: THREE.Group | null = null;
   let trays: THREE.InstancedMesh | null = null;
+  let alerts: { rings: THREE.InstancedMesh; beams: THREE.InstancedMesh; spots: THREE.Vector3[] } | null = null;
+  let flow: Flow | null = null;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let trayIds: ('A' | 'B')[] = [];
   const lensMat = std({ color: '#ffffff', roughness: 0.6, metalness: 0.05 });
   const highlight = new THREE.LineSegments(
@@ -313,7 +341,9 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     if (!visible) return;
     const moving = stepTween(now);
     const changed = controls.update();
-    if (dirty || moving || changed) {
+    const animating = (alerts !== null || flow !== null) && !reduceMotion.matches;
+    if (animating) animate(now / 1000);
+    if (dirty || moving || changed || animating) {
       dirty = false;
       renderer.render(scene, camera);
       placeLabels();
@@ -390,15 +420,7 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     });
     canvas.addEventListener('dblclick', (ev) => {
       const h = hit(ev as PointerEvent);
-      if (!h || !controls) return;
-      const item = byId.get(h.id);
-      const room = design?.rooms.find((r) => r.id === h.id);
-      const rect: Rect | undefined = item?.e ?? room;
-      if (!rect) return;
-      const t = new THREE.Vector3(W(rect.x + rect.w / 2), item ? 1 : 0, Z(rect.y + rect.h / 2));
-      const span = Math.max(rect.w, rect.h) / 1000;
-      const dir = camera.position.clone().sub(controls.target).normalize();
-      fly(t.clone().add(dir.multiplyScalar(Math.max(6, span * 1.6))), t);
+      if (h) focus(h.id);
     });
     let pending = false;
     canvas.addEventListener('pointermove', (ev) => {
@@ -433,6 +455,8 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     heatGroup = null;
     powerGroup = null;
     trays = null;
+    alerts = null;
+    flow = null;
   }
   const track = <T extends { dispose(): void }>(x: T): T => {
     disposables.push(x);
@@ -785,7 +809,177 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     }
     buildHeat(data);
     buildPowerPaths(data);
+    buildAlerts(data);
+    buildFlow(data);
+    applyWeather(data.conditions.outdoorC);
     invalidate();
+  }
+
+  /* A pulsing red ring and a light beam over every broken part, so failures read from across the site. */
+  function buildAlerts(data: LensData) {
+    if (alerts) {
+      root.remove(alerts.rings, alerts.beams);
+      alerts = null;
+    }
+    if (!design) return;
+    const spots: THREE.Vector3[] = [];
+    const sizes: number[] = [];
+    data.conditions.failed.forEach((id) => {
+      const target = id.startsWith('utility_') ? `tx_${id.slice(-1)}` : id;
+      const item = byId.get(target);
+      if (!item) return;
+      const e = item.e;
+      spots.push(new THREE.Vector3(W(e.x + e.w / 2), e.height / 1000 + (e.kind === 'drycooler' ? 0.6 : 0), Z(e.y + e.h / 2)));
+      sizes.push(Math.max(e.w, e.h) / 1000);
+    });
+    if (!spots.length) return;
+    const rings = new THREE.InstancedMesh(ringGeo, ringMat, spots.length);
+    const beams = new THREE.InstancedMesh(beamGeo, beamMat, spots.length);
+    rings.userData.sizes = sizes;
+    rings.renderOrder = 11;
+    beams.renderOrder = 11;
+    rings.frustumCulled = false;
+    beams.frustumCulled = false;
+    root.add(rings, beams);
+    alerts = { rings, beams, spots };
+    animate(performance.now() / 1000);
+  }
+
+  const tmpColor = new THREE.Color();
+  /* Heat lens: air drawn in at each rack's front, pushed through it and rising out of the hot aisle, coloured
+     by temperature. A few thousand dots moved on the CPU; only runs while the heat lens is on. */
+  function buildFlow(data: LensData) {
+    if (flow) {
+      root.remove(flow.mesh);
+      flow.mesh.dispose();
+      flow = null;
+    }
+    if (!design || data.lens !== 'heat' || !data.thermal) return;
+    const d = design;
+    const racks = d.equipment.filter((e) => e.kind === 'rack');
+    if (!racks.length) return;
+    const air = 1 - d.profile.liquidShare;
+    const per = Math.max(1, Math.min(8, Math.round((2400 / racks.length) * (0.35 + air))));
+    const n = racks.length * per;
+    const mesh = new THREE.InstancedMesh(dotGeo, dotMat, n);
+    mesh.frustumCulled = false;
+    const paths = new Float32Array(n * 8); // start xz, exit xz, out xz, height, phase
+    const cold = new Float32Array(n * 3);
+    const hot = new Float32Array(n * 3);
+    const rnd = (() => {
+      let x = 12345;
+      return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296);
+    })();
+    let k = 0;
+    racks.forEach((e) => {
+      const inlet = data.thermal!.rackInlet.get(e.id) ?? 22;
+      // instance colours are linear; the ramp is in display sRGB
+      const lin = (rgb: [number, number, number]) => {
+        tmpColor.setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
+        return [tmpColor.r, tmpColor.g, tmpColor.b];
+      };
+      const ci = lin(heatColor(inlet));
+      const ch = lin(heatColor(inlet + 10 + 8 * air));
+      // the front faces the cold aisle; plan facing N means the front looks to +y (world -z)
+      const f = e.facing === 'N' ? [0, -1] : e.facing === 'S' ? [0, 1] : e.facing === 'E' ? [1, 0] : [-1, 0];
+      const cx = W(e.x + e.w / 2);
+      const cz = Z(e.y + e.h / 2);
+      const half = (e.facing === 'N' || e.facing === 'S' ? e.h : e.w) / 2000;
+      for (let j = 0; j < per; j++, k++) {
+        const side = (rnd() - 0.5) * (e.facing === 'N' || e.facing === 'S' ? e.w : e.h) * 0.0009;
+        const sx = f[1] !== 0 ? side : 0;
+        const sz = f[0] !== 0 ? side : 0;
+        const o = k * 8;
+        paths[o] = cx + f[0] * (half + 0.95) + sx;
+        paths[o + 1] = cz + f[1] * (half + 0.95) + sz;
+        paths[o + 2] = cx - f[0] * (half + 0.15) + sx;
+        paths[o + 3] = cz - f[1] * (half + 0.15) + sz;
+        paths[o + 4] = cx - f[0] * (half + 0.75) + sx;
+        paths[o + 5] = cz - f[1] * (half + 0.75) + sz;
+        paths[o + 6] = 0.35 + rnd() * 1.6;
+        paths[o + 7] = rnd();
+        cold.set(ci, k * 3);
+        hot.set(ch, k * 3);
+      }
+    });
+    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 3), 3);
+    mesh.renderOrder = 4;
+    root.add(mesh);
+    flow = { mesh, paths, cold, hot, n, speed: 0.22 + 0.25 * air };
+    animate(performance.now() / 1000);
+  }
+
+  function animate(t: number) {
+    if (alerts) {
+      const pulse = (Math.sin(t * 4) + 1) / 2;
+      const m4 = new THREE.Matrix4();
+      const q = new THREE.Quaternion();
+      const sizes = alerts.rings.userData.sizes as number[];
+      alerts.spots.forEach((p, i) => {
+        const r = sizes[i] * 0.75 + 0.6 + pulse * 0.5;
+        m4.compose(new THREE.Vector3(p.x, p.y + 0.15, p.z), q, new THREE.Vector3(r, 1, r));
+        alerts!.rings.setMatrixAt(i, m4);
+        m4.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(1, 7 + pulse * 1.5, 1));
+        alerts!.beams.setMatrixAt(i, m4);
+      });
+      alerts.rings.instanceMatrix.needsUpdate = true;
+      alerts.beams.instanceMatrix.needsUpdate = true;
+      ringMat.opacity = 0.55 + 0.45 * (1 - pulse);
+      beamMat.opacity = 0.25 + 0.2 * pulse;
+    }
+    if (flow) {
+      const { paths, cold, hot, n, speed, mesh } = flow;
+      const m = mesh.instanceMatrix.array as Float32Array;
+      const col = mesh.instanceColor!.array as Float32Array;
+      for (let i = 0; i < n; i++) {
+        const o = i * 8;
+        const u = (t * speed + paths[o + 7]) % 1;
+        let x: number;
+        let y: number;
+        let z: number;
+        let mix: number;
+        if (u < 0.5) {
+          // across the cold aisle and through the rack
+          const a = u / 0.5;
+          x = paths[o] + (paths[o + 2] - paths[o]) * a;
+          z = paths[o + 1] + (paths[o + 3] - paths[o + 1]) * a;
+          y = paths[o + 6];
+          mix = a < 0.7 ? 0 : (a - 0.7) / 0.3;
+        } else {
+          // out of the back and up into the hot aisle
+          const a = (u - 0.5) / 0.5;
+          x = paths[o + 2] + (paths[o + 4] - paths[o + 2]) * Math.min(1, a * 2);
+          z = paths[o + 3] + (paths[o + 5] - paths[o + 3]) * Math.min(1, a * 2);
+          y = paths[o + 6] + (3.1 - paths[o + 6]) * a * a;
+          mix = 1;
+        }
+        const sc = Math.sin(Math.PI * u) * 0.9 + 0.1;
+        const b = i * 16;
+        m[b] = sc;
+        m[b + 5] = sc;
+        m[b + 10] = sc;
+        m[b + 12] = x;
+        m[b + 13] = y;
+        m[b + 14] = z;
+        const c = i * 3;
+        col[c] = cold[c] + (hot[c] - cold[c]) * mix;
+        col[c + 1] = cold[c + 1] + (hot[c + 1] - cold[c + 1]) * mix;
+        col[c + 2] = cold[c + 2] + (hot[c + 2] - cold[c + 2]) * mix;
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.instanceColor!.needsUpdate = true;
+    }
+  }
+
+  /* Hotter than the coolers' rating: a warmer sun and a hazier sky. */
+  function applyWeather(outdoorC: number) {
+    const k = Math.max(0, Math.min(1, (outdoorC - (DESIGN_AMBIENT_C - 4)) / 10));
+    sun.color.setRGB(1, 1 - 0.22 * k, 1 - 0.45 * k);
+    const base = new THREE.Color(dark ? 0x0b0b0c : 0xf2f2f4);
+    const warm = new THREE.Color(dark ? 0x2a1508 : 0xf7e2cc);
+    const bg = base.lerp(warm, k);
+    scene.background = bg;
+    if (scene.fog) (scene.fog as THREE.Fog).color.copy(bg);
   }
 
   function buildHeat(data: LensData) {
@@ -891,6 +1085,20 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     root.add(powerGroup);
   }
 
+  /* Fly to a part or a room, keeping the current viewing direction (but never looking from below the walls). */
+  function focus(id: string) {
+    if (!controls || !design) return;
+    const item = byId.get(id);
+    const room = design.rooms.find((r) => r.id === id);
+    const rect: Rect | undefined = item?.e ?? room;
+    if (!rect) return;
+    const t = new THREE.Vector3(W(rect.x + rect.w / 2), item ? 1 : 0, Z(rect.y + rect.h / 2));
+    const span = Math.max(rect.w, rect.h) / 1000;
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    if (dir.y < 0.45) dir.setY(0.45).normalize();
+    fly(t.clone().add(dir.multiplyScalar(Math.max(9, span * 1.6))), t);
+  }
+
   function select(id: string | null) {
     boxFor(highlight, id);
     invalidate();
@@ -922,6 +1130,7 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     preset,
     zoom,
     setTheme,
+    focus,
     setInsets: (i) => {
       insets = i;
       resize();

@@ -7,6 +7,7 @@ import { generateOptions } from './engine/design';
 import type { Basis } from './engine/types';
 import { emit, on, state, type Step } from './state';
 import { describeScreen } from './ui/describe';
+import { testScreen } from './ui/test';
 import { designScreen } from './ui/design';
 import { ICONS, h } from './ui/dom';
 
@@ -94,7 +95,7 @@ function mount() {
   const screens: Record<Step, HTMLElement> = {
     describe: describeScreen(generate),
     design: designScreen(() => go('test')),
-    test: soon('Test', 'Break a cooler, lose a power train, run a heat wave. Coming in the next step.'),
+    test: testScreen(),
     cost: soon('Cost', 'Build cost, running cost and five-year total. Coming soon.')
   };
   const main = h('main', { style: 'min-height:0;display:grid' });

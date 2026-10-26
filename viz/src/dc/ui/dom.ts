@@ -40,5 +40,15 @@ export const ICONS = {
   moon: icon('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
   download: icon('<path d="M12 4v12M6 10l6 6 6-6M5 20h14"/>'),
   close: icon('<path d="M6 6l12 12M18 6L6 18"/>'),
-  check: icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>')
+  check: icon('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  fan: icon('<circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7 2 0 3 2 1 4l-3 3M14 12c4 0 7 1 7 4 0 2-2 3-4 1l-3-3M12 14c0 4-1 7-4 7-2 0-3-2-1-4l3-3M10 12c-4 0-7-1-7-4 0-2 2-3 4-1l3 3"/>'),
+  bolt: icon('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+  plug: icon('<path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/><path d="M3 3l18 18"/>'),
+  thermo: icon('<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>'),
+  gauge: icon('<path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/>'),
+  storm: icon('<path d="M7 16a5 5 0 1 1 1-9.9A6 6 0 0 1 19 9a4 4 0 0 1-1 7.9"/><path d="M13 12l-2 4h3l-2 4"/>'),
+  play: icon('<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>'),
+  pause: icon('<path d="M8 5v14M16 5v14" stroke-width="3"/>'),
+  wrench: icon('<path d="M14.5 6.5a4 4 0 0 1 5.3-3.1l-2.7 2.7 1.8 1.8 2.7-2.7a4 4 0 0 1-5.1 5.3L8 19a2 2 0 0 1-3-3z"/>'),
+  reset: icon('<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5"/>')
 };

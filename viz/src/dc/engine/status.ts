@@ -12,8 +12,13 @@ export type Health = 'ok' | 'risk' | 'down';
 export interface Conditions {
   failed: ReadonlySet<string>; // equipment ids, plus 'utility_A' / 'utility_B'
   load: number; // IT load as a share of design (1 = every rack at its rated kW)
-  outdoorC: number; // outdoor temperature; outdoor coolers lose capacity above 35 °C
+  outdoorC: number; // outdoor temperature; outdoor coolers lose capacity above DESIGN_AMBIENT_C
 }
+
+/* Outdoor coolers are rated at this air temperature (a typical design day); hotter air costs 3% per degree. */
+export const DESIGN_AMBIENT_C = 38;
+export const coolerDerate = (outdoorC: number): number =>
+  outdoorC > DESIGN_AMBIENT_C ? Math.max(0.5, 1 - (outdoorC - DESIGN_AMBIENT_C) * 0.03) : 1;
 
 export const NORMAL: Conditions = { failed: new Set(), load: 1, outdoorC: 25 };
 
@@ -79,7 +84,6 @@ export function evaluate(d: Design, c: Conditions = NORMAL): Report {
   const rackKw = (r: Equip) => (r.kw ?? 0) * c.load;
   const itLoad = of('rack').reduce((a, r) => a + rackKw(r), 0);
   const overhead = d.profile.liquidShare > 0.5 ? 1.12 : d.profile.liquidShare > 0 ? 1.2 : 1.35;
-  const coolerDerate = c.outdoorC > 35 ? Math.max(0.5, 1 - (c.outdoorC - 35) * 0.03) : 1;
 
   // ---- Power: utility (or generators) -> switchgear -> UPS -> PDU -> rack, per side.
   const sides = d.basis.powerRedundancy === '2N' ? (['A', 'B'] as const) : (['A'] as const);
@@ -143,7 +147,7 @@ export function evaluate(d: Design, c: Conditions = NORMAL): Report {
   const halls = d.rooms.filter((r) => r.type === 'data_hall' && d.rows.some((row) => row.hall === r.id));
   const dry = of('drycooler');
   const heatTotal = itLoad * 1.1;
-  const yard = pool('outdoor', 'Outdoor coolers', heatTotal, dry, failed, coolerDerate);
+  const yard = pool('outdoor', 'Outdoor coolers', heatTotal, dry, failed, coolerDerate(c.outdoorC));
   pools.push(yard);
   const hallCool = new Map<string, { liquid: PoolReport | null; air: PoolReport | null }>();
   halls.forEach((h, i) => {

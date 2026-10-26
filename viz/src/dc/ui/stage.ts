@@ -11,6 +11,8 @@ export interface Stage {
   el: HTMLElement;
   setActions(el: HTMLElement | null): void;
   setInspectorExtra(fn: (() => HTMLElement[]) | null): void;
+  setBanner(el: HTMLElement | null): void;
+  focus(id: string): void;
   live(): LensData | null;
   refresh(): void;
 }
@@ -37,6 +39,7 @@ function createStage(): Stage {
   const legend = h('div', { class: 'floating legend' });
   const actions = h('div', { class: 'floating next' });
   const badge = h('span', { class: 'renderer-badge' });
+  const bannerSlot = h('div', { class: 'banner-slot' });
   let viewer: Viewer | null = null;
   let live: LensData | null = null;
   let liveKey = '';
@@ -89,7 +92,7 @@ function createStage(): Stage {
   );
   lensBar.append(lensSeg);
 
-  const el = h('div', { class: 'stage' }, viewHost, loading, tip, topLeft, inspector, legend, lensBar, actions);
+  const el = h('div', { class: 'stage' }, viewHost, loading, tip, topLeft, bannerSlot, inspector, legend, lensBar, actions);
 
   function paintView() {
     viewSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === state.view)));
@@ -206,6 +209,10 @@ function createStage(): Stage {
     setInspectorExtra: (fn) => {
       extra = fn;
       paintInspector();
+    },
+    setBanner: (b) => bannerSlot.replaceChildren(...(b ? [b] : [])),
+    focus: (id) => {
+      if (state.view === '3d') viewer?.focus(id);
     },
     live: compute,
     refresh: () => {

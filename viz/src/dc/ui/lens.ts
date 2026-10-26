@@ -18,10 +18,11 @@ export interface LensData {
   lens: Lens;
   report: Report;
   thermal: ThermalResult | null;
+  conditions: Conditions;
 }
 
 export function lensData(d: Design, lens: Lens, c: Conditions = NORMAL): LensData {
-  return { lens, report: evaluate(d, c), thermal: lens === 'heat' ? thermal(d, c) : null };
+  return { lens, report: evaluate(d, c), thermal: lens === 'heat' ? thermal(d, c) : null, conditions: c };
 }
 
 const HEALTH: Record<Health, RGB> = { ok: [0.2, 0.75, 0.42], risk: [1, 0.66, 0.15], down: [0.95, 0.22, 0.2] };

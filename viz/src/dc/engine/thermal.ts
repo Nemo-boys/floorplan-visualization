@@ -5,7 +5,7 @@
    Solved with successive over-relaxation on a grid of CELL mm. Calibrated per design so that, with every
    unit running at full load, the warmest rack inlet sits at NOMINAL_MAX_C. */
 import type { Conditions } from './status';
-import { NORMAL } from './status';
+import { DESIGN_AMBIENT_C, NORMAL } from './status';
 import type { Design, Room } from './types';
 
 export const CELL = 600;
@@ -143,7 +143,7 @@ function scaleFor(d: Design): number {
 export function thermal(d: Design, c: Conditions = NORMAL): ThermalResult {
   const k = scaleFor(d);
   // a heat wave raises the supply air when the outdoor coolers run short
-  const supply = SUPPLY_C + (c.outdoorC > 35 ? (c.outdoorC - 35) * 0.6 : 0);
+  const supply = SUPPLY_C + (c.outdoorC > DESIGN_AMBIENT_C ? (c.outdoorC - DESIGN_AMBIENT_C) * 0.6 : 0);
   const raw = solve(d, c);
   const lift = (r: Raw) => Math.min(18, r.shortfall * 40); // a 25% shortfall adds ~10 °C
   const halls = raw.map((r) => {

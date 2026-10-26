@@ -84,10 +84,10 @@
 .chat-send.stop { background: var(--ink-2); }
 
 .chat-peek {
-  position: fixed; z-index: 40; top: 66px; right: 16px; width: 320px; display: grid; grid-template-columns: 28px 1fr auto; gap: 4px 10px; align-items: start;
+  position: fixed; z-index: 40; bottom: 84px; right: 16px; width: 320px; display: grid; grid-template-columns: 28px 1fr auto; gap: 4px 10px; align-items: start;
   background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
   border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 12px 12px 12px 12px;
-  opacity: 0; transform: translateY(-8px) scale(0.98); pointer-events: none; transition: opacity 0.22s, transform 0.22s;
+  opacity: 0; transform: translateY(8px) scale(0.98); pointer-events: none; transition: opacity 0.22s, transform 0.22s;
 }
 .chat-peek.on { opacity: 1; transform: none; pointer-events: auto; }
 .chat-peek-ic { width: 28px; height: 28px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; grid-row: span 2; }

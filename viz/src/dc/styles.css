@@ -416,7 +416,9 @@ svg.day .head { stroke: var(--ink); stroke-width: 1.2; }
 .pool-head b { font-weight: 600; white-space: nowrap; }
 .meter { height: 6px; border-radius: 3px; background: rgba(120, 120, 128, 0.16); margin-top: 4px; overflow: hidden; }
 .meter i { display: block; height: 100%; border-radius: 3px; transition: width 0.3s; }
-.banner-slot { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none; max-width: calc(100% - 520px); }
+/* between the top-left controls and the card on the right, so it never covers either */
+.banner-slot { position: absolute; top: 16px; left: 168px; right: 340px; z-index: 6; pointer-events: none; display: flex; justify-content: center; }
+.stage.card-min .banner-slot { right: 340px; }
 .status-banner {
   position: static; display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px; font-size: 14px; font-weight: 500;
   background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);

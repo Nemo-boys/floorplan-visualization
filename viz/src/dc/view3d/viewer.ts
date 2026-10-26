@@ -140,13 +140,15 @@ const ringGeo = (() => {
   g.rotateX(-Math.PI / 2);
   return g;
 })();
-const ringMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+// a steady ring on the floor round a broken part, a soft ripple spreading from it, and a thin marker post
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide });
+const rippleMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
 const beamGeo = (() => {
-  const g = new THREE.CylinderGeometry(0.12, 0.45, 1, 16, 1, true);
+  const g = new THREE.CylinderGeometry(0.04, 0.04, 1, 10, 1, true);
   g.translate(0, 0.5, 0);
   return g;
 })();
-const beamMat = new THREE.MeshBasicMaterial({ color: 0xff453a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+const beamMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.55, depthWrite: false });
 const dotGeo = new THREE.IcosahedronGeometry(0.045, 0);
 const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 interface Flow {
@@ -191,7 +193,8 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
   let heatGroup: THREE.Group | null = null;
   let powerGroup: THREE.Group | null = null;
   let trays: THREE.InstancedMesh | null = null;
-  let alerts: { rings: THREE.InstancedMesh; beams: THREE.InstancedMesh; spots: THREE.Vector3[] } | null = null;
+  let alerts: { rings: THREE.InstancedMesh; ripples: THREE.InstancedMesh; beams: THREE.InstancedMesh; spots: THREE.Vector3[] } | null = null;
+  let lastAnim = 0;
   let flow: Flow | null = null;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let trayIds: ('A' | 'B')[] = [];
@@ -342,8 +345,12 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     if (!visible) return;
     const moving = stepTween(now);
     const changed = controls.update();
-    const animating = (alerts !== null || flow !== null) && !reduceMotion.matches;
-    if (animating) animate(now / 1000);
+    // the ripple is slow, so 30 frames a second is plenty; the airflow gets every frame
+    const animating = (alerts !== null || flow !== null) && !reduceMotion.matches && (flow !== null || now - lastAnim > 33);
+    if (animating) {
+      lastAnim = now;
+      animate(now / 1000);
+    }
     if (dirty || moving || changed || animating) {
       dirty = false;
       renderer.render(scene, camera);
@@ -769,7 +776,7 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
   /* A pulsing red ring and a light beam over every broken part, so failures read from across the site. */
   function buildAlerts(data: LensData) {
     if (alerts) {
-      root.remove(alerts.rings, alerts.beams);
+      root.remove(alerts.rings, alerts.ripples, alerts.beams);
       alerts = null;
     }
     if (!design) return;
@@ -780,19 +787,30 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
       const item = byId.get(target);
       if (!item) return;
       const e = item.e;
+      // y: the top of the part, where the marker post starts
       spots.push(new THREE.Vector3(W(e.x + e.w / 2), e.height / 1000 + (e.kind === 'drycooler' ? 0.6 : 0), Z(e.y + e.h / 2)));
       sizes.push(Math.max(e.w, e.h) / 1000);
     });
     if (!spots.length) return;
     const rings = new THREE.InstancedMesh(ringGeo, ringMat, spots.length);
+    const ripples = new THREE.InstancedMesh(ringGeo, rippleMat, spots.length);
     const beams = new THREE.InstancedMesh(beamGeo, beamMat, spots.length);
     rings.userData.sizes = sizes;
-    rings.renderOrder = 11;
-    beams.renderOrder = 11;
-    rings.frustumCulled = false;
-    beams.frustumCulled = false;
-    root.add(rings, beams);
-    alerts = { rings, beams, spots };
+    const m4 = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    spots.forEach((p, i) => {
+      const r = sizes[i] * 0.7 + 0.5;
+      m4.compose(new THREE.Vector3(p.x, FLOOR_T + 0.03, p.z), q, new THREE.Vector3(r, 1, r));
+      rings.setMatrixAt(i, m4);
+      m4.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(1, 3.2, 1));
+      beams.setMatrixAt(i, m4);
+    });
+    [rings, ripples, beams].forEach((m) => {
+      m.renderOrder = 5;
+      m.frustumCulled = false;
+    });
+    root.add(rings, ripples, beams);
+    alerts = { rings, ripples, beams, spots };
     animate(performance.now() / 1000);
   }
 
@@ -862,21 +880,18 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
 
   function animate(t: number) {
     if (alerts) {
-      const pulse = (Math.sin(t * 4) + 1) / 2;
+      // one slow ripple every 2.4 s: it spreads and fades out, so nothing ever flashes
+      const k = (t / 2.4) % 1;
       const m4 = new THREE.Matrix4();
       const q = new THREE.Quaternion();
       const sizes = alerts.rings.userData.sizes as number[];
       alerts.spots.forEach((p, i) => {
-        const r = sizes[i] * 0.75 + 0.6 + pulse * 0.5;
-        m4.compose(new THREE.Vector3(p.x, p.y + 0.15, p.z), q, new THREE.Vector3(r, 1, r));
-        alerts!.rings.setMatrixAt(i, m4);
-        m4.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(1, 7 + pulse * 1.5, 1));
-        alerts!.beams.setMatrixAt(i, m4);
+        const r = (sizes[i] * 0.7 + 0.5) * (1 + k * 1.6);
+        m4.compose(new THREE.Vector3(p.x, FLOOR_T + 0.025, p.z), q, new THREE.Vector3(r, 1, r));
+        alerts!.ripples.setMatrixAt(i, m4);
       });
-      alerts.rings.instanceMatrix.needsUpdate = true;
-      alerts.beams.instanceMatrix.needsUpdate = true;
-      ringMat.opacity = 0.55 + 0.45 * (1 - pulse);
-      beamMat.opacity = 0.25 + 0.2 * pulse;
+      alerts.ripples.instanceMatrix.needsUpdate = true;
+      rippleMat.opacity = 0.55 * (1 - k) * (1 - k);
     }
     if (flow) {
       const { paths, cold, hot, n, speed, mesh } = flow;
@@ -1046,8 +1061,8 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     const t = new THREE.Vector3(W(rect.x + rect.w / 2), item ? 1 : 0, Z(rect.y + rect.h / 2));
     const span = Math.max(rect.w, rect.h) / 1000;
     const dir = camera.position.clone().sub(controls.target).normalize();
-    if (dir.y < 0.45) dir.setY(0.45).normalize();
-    fly(t.clone().add(dir.multiplyScalar(Math.max(9, span * 1.6))), t);
+    if (dir.y < 0.6) dir.setY(0.6).normalize();
+    fly(t.clone().add(dir.multiplyScalar(Math.max(26, span * 2.5))), t);
   }
 
   function select(id: string | null) {
@@ -1083,6 +1098,8 @@ export function createViewer(onPick: (kind: 'room' | 'equip', id: string | null)
     setTheme,
     focus,
     setInsets: (i) => {
+      // resizing clears the canvas, so only do it when something actually changed
+      if (i.left === insets.left && i.right === insets.right && i.top === insets.top && i.bottom === insets.bottom) return;
       insets = i;
       resize();
     },

@@ -144,13 +144,13 @@ This is the strongest part of the demo.
   - the deep links in `shell.spec.ts:52`, which fail about 6 times in 32 runs on both versions.
 - Playwright needs `npx playwright install chromium` (build 1248).
 
-### Step 5: Clinic demo freeze 🔜 (target Tue Oct 27 night)
+### Step 5: Clinic demo freeze ✅ (Oct 25, light version)
 
-- Add `make dev`, the README and the demo script.
-- Add a benchmark table from `aegis/benchmark.py` and a cost-per-accepted-plan panel.
-- Tag `v0.1-clinic`.
+- ✅ `make dev` (builds the viewer, serves it with the API on :8000), README, [docs/DEMO.md](docs/DEMO.md).
+- ✅ `make bench` (`aegis/scripts/bench_pipeline.py`): a measured benchmark, raw model vs. pipeline vs. model off, to [docs/BENCHMARK.md](docs/BENCHMARK.md). Only the model-off rows are in so far. The full run (about 30 min) is left for Thu Oct 29. The old `aegis/benchmark_report.md` hardcodes its baseline rows, so don't show it.
+- ✅ Tag `v0.1-clinic`.
 
-### Step 6: Domain packs, then datacenter ⏳
+### Step 6: Domain packs, then datacenter 🔜
 
 See [docs/DATACENTER.md](docs/DATACENTER.md).
 

@@ -1,0 +1,331 @@
+{
+  "date": "2026-10-25",
+  "machine": "Apple M4 Pro, Darwin 27.0.0",
+  "model": null,
+  "summary": {
+    "template": {
+      "n": 20,
+      "parsed": 20,
+      "all_pass": 20,
+      "checks_pct": 100.0,
+      "fidelity": 20,
+      "p50_s": 0.04,
+      "max_s": 0.13,
+      "s_per_accepted": 0.1,
+      "fails": []
+    }
+  },
+  "template": [
+    {
+      "id": "feas_01",
+      "latency_s": 0.08,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_02",
+      "latency_s": 0.02,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_03",
+      "latency_s": 0.12,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 9,
+      "total": 9,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_04",
+      "latency_s": 0.02,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_05",
+      "latency_s": 0.02,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_06",
+      "latency_s": 0.05,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_07",
+      "latency_s": 0.04,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 9,
+      "total": 9,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_08",
+      "latency_s": 0.13,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_09",
+      "latency_s": 0.03,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_10",
+      "latency_s": 0.04,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_11",
+      "latency_s": 0.04,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_12",
+      "latency_s": 0.08,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_13",
+      "latency_s": 0.04,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_14",
+      "latency_s": 0.06,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_15",
+      "latency_s": 0.11,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_16",
+      "latency_s": 0.05,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_17",
+      "latency_s": 0.03,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_18",
+      "latency_s": 0.02,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_19",
+      "latency_s": 0.03,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    },
+    {
+      "id": "feas_20",
+      "latency_s": 0.12,
+      "source": "fallback",
+      "solver": "OPTIMAL",
+      "passed": 8,
+      "total": 8,
+      "all_pass": true,
+      "fails": [],
+      "candidates_all_pass": 3,
+      "fidelity": true,
+      "model_counts_right": null
+    }
+  ],
+  "stress": [
+    {
+      "id": "stress_01",
+      "status": "INFEASIBLE",
+      "core": [
+        "BOUNDARY_CAPACITY_EXCEEDED: required min area 38.3m2 exceeds boundary 25.0m2",
+        "LOCKED_ROOM_waiting_1 (16.0m2)",
+        "MIN_AREA_FGI_exam_1 (11.2m2)"
+      ],
+      "ms": 0,
+      "diagnosed": true
+    },
+    {
+      "id": "stress_02",
+      "status": "INFEASIBLE",
+      "core": [
+        "GEOMETRIC_PACKING_CONSTRAINTS_CONTRADICTORY"
+      ],
+      "ms": 0,
+      "diagnosed": true
+    },
+    {
+      "id": "stress_03",
+      "status": "INFEASIBLE",
+      "core": [
+        "GEOMETRIC_PACKING_CONSTRAINTS_CONTRADICTORY"
+      ],
+      "ms": 0,
+      "diagnosed": true
+    },
+    {
+      "id": "stress_04",
+      "status": "INFEASIBLE",
+      "core": [
+        "GEOMETRIC_PACKING_CONSTRAINTS_CONTRADICTORY"
+      ],
+      "ms": 0,
+      "diagnosed": true
+    },
+    {
+      "id": "stress_05",
+      "status": "INFEASIBLE",
+      "core": [
+        "BOUNDARY_CAPACITY_EXCEEDED: required min area 47.3m2 exceeds boundary 36.0m2",
+        "LOCKED_ROOM_waiting_1 (25.0m2)",
+        "MIN_AREA_FGI_exam_1 (11.2m2)"
+      ],
+      "ms": 0,
+      "diagnosed": true
+    }
+  ]
+}

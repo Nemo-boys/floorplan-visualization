@@ -20,7 +20,15 @@ make setup
 make test
 ```
 
-Run each half:
+Run the app (viewer + API, uses the local model if it's downloaded):
+
+```bash
+make dev        # http://127.0.0.1:8000
+```
+
+Demo script: [docs/DEMO.md](docs/DEMO.md). Measured benchmark: [docs/BENCHMARK.md](docs/BENCHMARK.md) (`make bench`).
+
+Or run each half on its own:
 
 ```bash
 cd aegis && .venv/bin/uvicorn aegisplan.server:app --port 8000   # API (works without model weights)

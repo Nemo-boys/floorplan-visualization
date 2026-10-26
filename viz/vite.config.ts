@@ -8,7 +8,12 @@ export default defineConfig({
     proxy: process.env.FI_OFFLINE ? undefined : { '/api': 'http://127.0.0.1:8000' }
   },
   preview: { port: 5173, strictPort: true },
-  build: { outDir: 'dist', target: 'es2022' },
+  build: {
+    outDir: 'dist',
+    target: 'es2022',
+    // two pages: the clinic viewer (index.html) and the data center app (datacenter.html)
+    rolldownOptions: { input: { main: 'index.html', datacenter: 'datacenter.html' } }
+  },
   test: {
     include: ['tests/unit/**/*.test.ts', 'tests/golden/**/*.test.ts'],
     passWithNoTests: true

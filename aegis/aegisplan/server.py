@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -273,6 +273,12 @@ async def aegis_ui():
                 },
             )
     return HTMLResponse("<h1>AegisPlan API running</h1>")
+
+
+@app.get("/datacenter")
+async def datacenter_page():
+    """Data Center Studio, the viewer's second page."""
+    return RedirectResponse("/datacenter.html")
 
 
 if os.path.isdir(VIZ_DIST):

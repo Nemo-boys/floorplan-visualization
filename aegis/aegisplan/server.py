@@ -14,6 +14,7 @@ from aegisplan.validator import validate_plan
 from aegisplan.cpsat_repair import repair_plan
 from aegisplan.router import GenerationRouter, FEW_SHOT_EXEMPLAR
 from aegisplan.export_viz import to_viz_plan
+from aegisplan.edits import apply_edit
 from aegisplan.gguf_engine import find_gguf_model_path
 
 # The viewer's production build (viz/dist), served at / when it exists.
@@ -51,6 +52,12 @@ class RepairRequest(BaseModel):
     fml_text: Optional[str] = None
     enforce_door_adjacencies: bool = True
     max_time_seconds: float = 2.0
+
+
+class EditTextRequest(BaseModel):
+    plan: PlanDocument
+    text: str
+    name: str = ""
 
 
 class EditRoomRequest(BaseModel):
@@ -167,6 +174,21 @@ async def pipeline(req: GenerateRequest):
             "viz_plan": viz,
         })
     return {"mode": req.mode, "candidates": out}
+
+
+@app.post("/api/edit_text")
+async def edit_text(req: EditTextRequest):
+    """Plain-language edit ("Make the waiting room 20% bigger, keep the restrooms fixed"), repaired by CP-SAT."""
+    res = apply_edit(req.plan, req.text)
+    return {
+        "status": res.status,
+        "summary": res.summary,
+        "explanation": res.explanation,
+        "conflict_rooms": res.conflict_rooms,
+        "solve_time_ms": res.solve_time_ms,
+        "plan": res.plan,
+        "viz_plan": to_viz_plan(res.plan, name=req.name) if res.status in ("OPTIMAL", "FEASIBLE") else None,
+    }
 
 
 @app.post("/api/validate")

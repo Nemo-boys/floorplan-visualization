@@ -65,6 +65,7 @@ function themeToggle(): HTMLElement {
       /* private mode: the choice lasts for this visit */
     }
     paint();
+    emit('theme');
   });
   paint();
   return btn;

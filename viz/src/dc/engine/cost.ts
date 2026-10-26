@@ -1,6 +1,9 @@
 /* Build cost, running cost and total cost of ownership. Every rate is an input the person can change; the
    defaults are planning assumptions with the source they were checked against, never quotes. */
-import type { Design } from './types';
+import type { Basis, Design } from './types';
+
+/* The money side of the brief: what electricity costs, over how many years, and how busy the site is. */
+export type Money = Pick<Basis, 'priceKwh' | 'years' | 'utilization'>;
 
 export interface Rate {
   key: RateKey;
@@ -69,6 +72,7 @@ export interface CostReport {
   co2Tonnes: number; // per year
   gpus: number;
   perGpuHour: number; // TCO per GPU-hour at the stated utilisation
+  perKwMonth: number; // TCO per kW of computing per month: compares designs with different GPUs
   years: number;
 }
 
@@ -85,10 +89,9 @@ export function pueOf(d: Design, utilization: number): { pue: number; cooling: n
   return { pue: 1 + cooling + power + other, cooling, power, other };
 }
 
-export function costOf(d: Design, rates: Rates = DEFAULT_RATES): CostReport {
-  const b = d.basis;
+export function costOf(d: Design, rates: Rates = DEFAULT_RATES, b: Money = d.basis): CostReport {
   const it = d.itKw;
-  const trains = b.powerRedundancy === '2N' ? 2 : 1;
+  const trains = d.basis.powerRedundancy === '2N' ? 2 : 1;
   const area = d.rooms.filter((r) => !r.outdoor).reduce((a, r) => a + (r.w * r.h) / 1e6, 0);
   const raw: CostLine[] = [
     { label: 'Building', group: 'building', amount: area * rates.shell },
@@ -136,6 +139,7 @@ export function costOf(d: Design, rates: Rates = DEFAULT_RATES): CostReport {
     co2Tonnes: (energyMwhYear * 1000 * rates.carbon) / 1000,
     gpus,
     perGpuHour: tco / gpuHours,
+    perKwMonth: tco / (it * 12 * b.years),
     years: b.years
   };
 }

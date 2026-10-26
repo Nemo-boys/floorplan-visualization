@@ -7,6 +7,7 @@ import { generateOptions } from './engine/design';
 import type { Basis } from './engine/types';
 import { emit, on, state, type Step } from './state';
 import { describeScreen } from './ui/describe';
+import { costScreen } from './ui/cost';
 import { testScreen } from './ui/test';
 import { designScreen } from './ui/design';
 import { ICONS, h } from './ui/dom';
@@ -21,7 +22,7 @@ const STEPS: { id: Step; label: string }[] = [
 function generate(brief: string, basis: Basis) {
   state.brief = brief;
   state.basis = basis;
-  state.options = generateOptions(basis).map((design) => ({ design, cost: costOf(design), checks: runChecks(design) }));
+  state.options = generateOptions(basis).map((design) => ({ design, cost: costOf(design, state.rates, basis), checks: runChecks(design) }));
   // Recommend what the brief asked for; otherwise the cheapest to build and run among those passing every check.
   const match = state.options.findIndex((o) => o.design.profile.key === basis.cooling);
   const total = (i: number) => state.options[i].cost.facility + state.options[i].cost.opexYear * basis.years;
@@ -38,10 +39,6 @@ function go(step: Step) {
   if (step !== 'describe' && !state.options.length) return;
   state.step = step;
   emit('step');
-}
-
-function soon(title: string, text: string): HTMLElement {
-  return h('section', { class: 'soon' }, h('div', {}, h('h2', {}, title), h('p', {}, text)));
 }
 
 function themeToggle(): HTMLElement {
@@ -96,7 +93,7 @@ function mount() {
     describe: describeScreen(generate),
     design: designScreen(() => go('test')),
     test: testScreen(),
-    cost: soon('Cost', 'Build cost, running cost and five-year total. Coming soon.')
+    cost: costScreen()
   };
   const main = h('main', { style: 'min-height:0;display:grid' });
   app.replaceChildren(bar, main);

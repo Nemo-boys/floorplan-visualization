@@ -1,7 +1,7 @@
 /* The app's single state object and a minimal change feed. */
 import { DEFAULT_BASIS } from './engine/brief';
 import type { Check } from './engine/checks';
-import type { CostReport } from './engine/cost';
+import { DEFAULT_RATES, type CostReport, type Rates } from './engine/cost';
 import { NORMAL, type Conditions } from './engine/status';
 import type { Basis, Design } from './engine/types';
 import type { Lens } from './ui/lens';
@@ -26,6 +26,7 @@ export interface State {
   lens: Lens;
   view: '3d' | 'plan';
   conditions: Conditions; // failures and stresses applied in the Test step
+  rates: Rates; // cost assumptions, editable in the Cost step
 }
 
 export const DEFAULT_BRIEF = '20 MW AI factory, liquid-cooled GB200 racks, N+1 cooling, 2N power';
@@ -40,10 +41,11 @@ export const state: State = {
   pick: null,
   lens: 'layout',
   view: '3d',
-  conditions: NORMAL
+  conditions: NORMAL,
+  rates: { ...DEFAULT_RATES }
 };
 
-type Topic = 'step' | 'options' | 'selected' | 'pick' | 'lens' | 'conditions' | 'theme';
+type Topic = 'step' | 'options' | 'selected' | 'pick' | 'lens' | 'conditions' | 'theme' | 'cost';
 const subs = new Map<Topic, Set<() => void>>();
 export function on(topic: Topic, fn: () => void): void {
   if (!subs.has(topic)) subs.set(topic, new Set());

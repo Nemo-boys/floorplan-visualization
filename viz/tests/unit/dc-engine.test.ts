@@ -196,6 +196,17 @@ describe('costOf', () => {
     expect(Math.abs(r.tco - (r.facility + r.it + r.opexYear * r.years))).toBeLessThan(1);
   });
 
+  it('takes electricity price, years and utilisation as overrides and gives a fair per-kW-month figure', () => {
+    const d = optionFor(basis, 'liquid');
+    const base = costOf(d);
+    const dear = costOf(d, undefined, { ...d.basis, priceKwh: d.basis.priceKwh * 2 });
+    expect(dear.energyYear).toBeCloseTo(base.energyYear * 2, 0);
+    expect(dear.facility).toBeCloseTo(base.facility, 0);
+    const long = costOf(d, undefined, { ...d.basis, years: 10 });
+    expect(long.tco - long.opexYear * 10).toBeCloseTo(base.tco - base.opexYear * base.years, 0);
+    expect(base.perKwMonth).toBeCloseTo(base.tco / (d.itKw * 12 * base.years), 6);
+  });
+
   it('formats money in millions', () => {
     expect(fmtMoney(2_500_000)).toBe('$2.5M');
   });

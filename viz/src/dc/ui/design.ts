@@ -90,6 +90,7 @@ export function designScreen(onNext: () => void): HTMLElement {
   };
   on('options', paintRail);
   on('selected', paintRail);
+  on('cost', paintRail);
   on('step', () => {
     if (state.step !== 'design') return;
     const stage = getStage();

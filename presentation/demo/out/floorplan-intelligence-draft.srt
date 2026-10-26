@@ -1,0 +1,380 @@
+1
+00:00:00,350 --> 00:00:04,111
+James: Ava, every building starts the same way, doesn't it?
+
+2
+00:00:04,391 --> 00:00:09,691
+Ava: With a sentence. A clinic with six exam rooms. A twenty-megawatt AI factory.
+
+3
+00:00:09,971 --> 00:00:14,886
+James: And then weeks of drawings, before anyone knows if it actually works.
+
+4
+00:00:15,166 --> 00:00:19,313
+Ava: So we asked ourselves... what if the sentence was enough?
+
+5
+00:00:23,250 --> 00:00:25,088
+James: This is Floorplan Intelligence.
+
+6
+00:00:25,368 --> 00:00:27,206
+Ava: Brief in. Building out.
+
+7
+00:00:28,207 --> 00:00:34,660
+Ava: Now, James, the obvious move is to just ask an AI to draw the plan, right?
+
+8
+00:00:34,940 --> 00:00:44,856
+James: We tried that. It draws one, very confidently. Rooms overlap. The corridor comes out ten times too wide. And then it tells you it's code-compliant.
+
+9
+00:00:45,136 --> 00:00:46,974
+Ava: And a constraint solver?
+
+10
+00:00:47,254 --> 00:00:52,939
+James: The opposite. Flawless geometry. But it can't read a single word of your brief.
+
+11
+00:00:53,939 --> 00:00:59,238
+Ava: So we split the job, by what each tool is genuinely good at.
+
+12
+00:00:59,518 --> 00:01:06,357
+James: NVIDIA Nemotron reads the intent. A solver makes the geometry exact. A rule checker cites what passed.
+
+13
+00:01:06,637 --> 00:01:11,552
+Ava: And the browser lets anyone walk it, stress it, and price it.
+
+14
+00:01:11,832 --> 00:01:13,286
+James: The model proposes.
+
+15
+00:01:13,566 --> 00:01:15,020
+Ava: The solver proves.
+
+16
+00:01:15,300 --> 00:01:18,677
+James: And the simulator tells you if it works.
+
+17
+00:01:19,676 --> 00:01:23,053
+Ava: Let's start with the model. James, why Nemotron?
+
+18
+00:01:23,333 --> 00:01:36,326
+James: Nemotron Nano. Nine billion parameters, and it's a hybrid: mostly Mamba-2 state-space layers, which read long context in linear time, with attention only where it matters. Small enough to run on a laptop.
+
+19
+00:01:36,606 --> 00:01:40,367
+Ava: And you didn't just use it off the shelf.
+
+20
+00:01:40,647 --> 00:01:49,409
+James: No. Two stages. First, Q-LoRA fine-tuning, on four hundred solver-certified clinic layouts, written in a compact plan language we designed for it.
+
+21
+00:01:49,689 --> 00:01:51,912
+Ava: Then reinforcement learning, with GRPO.
+
+22
+00:01:52,192 --> 00:02:04,030
+James: Right, and with no human preference model. Four rewards, computed straight from the plan. Does it parse? Do rooms overlap? Can you reach every room? Does it meet the code?
+
+23
+00:02:04,310 --> 00:02:07,303
+Ava: So the plan itself grades the model.
+
+24
+00:02:08,302 --> 00:02:12,449
+Ava: And when it generates, there's a grammar running inside llama-C-P-P.
+
+25
+00:02:12,729 --> 00:02:18,413
+James: Which means every token it writes has to be legal. Every single line parses.
+
+26
+00:02:18,693 --> 00:02:21,301
+Ava: But then you tested it properly.
+
+27
+00:02:21,581 --> 00:02:34,958
+James: We did, and here's the honest part. The room program was right, every time: which rooms, and how many. The coordinates were not. A corridor of eighteen hundred millimetres came out at eighteen thousand.
+
+28
+00:02:35,238 --> 00:02:40,538
+Ava: So the model writes the program, and the geometry goes to a solver.
+
+29
+00:02:41,537 --> 00:02:44,145
+James: Ava, walk us through the solver.
+
+30
+00:02:44,425 --> 00:02:58,956
+Ava: Google OR-Tools CP-SAT, on a hundred-millimetre grid. Every room becomes integer variables. No two rooms can overlap, by construction. Locked rooms stay exactly where you put them, and rooms joined by a door must share a wall.
+
+31
+00:02:59,236 --> 00:03:00,690
+James: And everything else?
+
+32
+00:03:00,970 --> 00:03:04,347
+Ava: Moves as little as possible. That's the objective.
+
+33
+00:03:04,627 --> 00:03:07,619
+James: And when you ask for something impossible?
+
+34
+00:03:07,899 --> 00:03:16,661
+Ava: It doesn't make something up. It returns a proof: the smallest set of rooms that can't all fit, and the arithmetic why.
+
+35
+00:03:17,660 --> 00:03:28,345
+James: Then nine rules are checked. ADA door widths and turning circles, FGI exam-room sizes, IBC egress. Each one with the measured value, the requirement, and the citation.
+
+36
+00:03:28,625 --> 00:03:32,387
+Ava: We never say compliant. We say exactly what passed.
+
+37
+00:03:33,386 --> 00:03:37,148
+Ava: And the 3D comes from just rooms and doors?
+
+38
+00:03:37,428 --> 00:03:45,805
+James: Just rooms and doors. The viewer derives the walls, the windows, the furniture, a walkable grid, and real A-star walking paths.
+
+39
+00:03:46,085 --> 00:03:52,539
+Ava: Which keeps the simulation honest. Move the nurse station, and the nurses really do walk further.
+
+40
+00:03:53,538 --> 00:04:04,223
+James: Then we simulate the day. It's a discrete-event engine. Patients, nurses, providers and the front desk, and every visit is a chain of events on a timeline.
+
+41
+00:04:04,503 --> 00:04:12,880
+Ava: Check in, wait, vitals, the provider, checkout. And it's seeded, so it's deterministic: same seed, same day, down to the minute.
+
+42
+00:04:13,160 --> 00:04:19,998
+James: And we don't run one day. We run twenty, so you get a range, not a guess.
+
+43
+00:04:20,998 --> 00:04:23,991
+Ava: And none of this is a mock-up.
+
+44
+00:04:24,271 --> 00:04:38,032
+James: Two apps on one pipeline. About twenty-two thousand lines of TypeScript, five and a half thousand of Python, and two hundred and ten tests, including golden files that freeze the simulator's numbers to the minute.
+
+45
+00:04:38,312 --> 00:04:40,920
+Ava: Running in the browser, on WebGPU.
+
+46
+00:04:41,920 --> 00:04:43,374
+Ava: Okay. Enough diagrams.
+
+47
+00:04:43,654 --> 00:04:45,108
+James: Let's see it.
+
+48
+00:04:46,108 --> 00:04:52,178
+Ava: I'm describing a primary-care clinic. Six exam rooms, a nurse station, an accessible restroom. Generate.
+
+49
+00:04:52,458 --> 00:04:58,142
+James: Three candidates, ranked by the checks they pass. Nine out of nine, all three.
+
+50
+00:04:59,142 --> 00:05:01,750
+James: Open one, and it's a building.
+
+51
+00:05:02,030 --> 00:05:12,715
+Ava: Rendered live, in the browser. Click a room and it tells you what it's for. Or take the guided tour, in the order a patient walks it.
+
+52
+00:05:13,714 --> 00:05:17,861
+James: Now, the real question. Does it cope with flu season?
+
+53
+00:05:18,141 --> 00:05:22,671
+Ava: Flu-season Monday. Ninety patients, and a morning rush. Run twenty days.
+
+54
+00:05:22,951 --> 00:05:27,098
+James: And there's the verdict, in plain words, with the bottleneck.
+
+55
+00:05:28,097 --> 00:05:30,705
+Ava: What if we add a nurse?
+
+56
+00:05:30,985 --> 00:05:37,054
+James: The assistant changes the day, runs it again, and comes back with the new wait.
+
+57
+00:05:37,334 --> 00:05:43,404
+Ava: And it never guesses. Every number comes from the same engine you see on screen.
+
+58
+00:05:44,403 --> 00:05:46,627
+James: Can we compare the layouts?
+
+59
+00:05:46,907 --> 00:05:49,899
+Ava: Same day, every plan, side by side.
+
+60
+00:05:50,898 --> 00:05:58,891
+Ava: And edits are just plain language. Make the waiting room twenty percent bigger, and keep the restrooms where they are.
+
+61
+00:05:59,171 --> 00:06:03,702
+James: The solver keeps what you asked for, and moves the rest.
+
+62
+00:06:03,982 --> 00:06:06,974
+Ava: And if I ask for something impossible?
+
+63
+00:06:07,254 --> 00:06:09,477
+James: It tells you exactly why.
+
+64
+00:06:10,476 --> 00:06:17,700
+Ava: Then export everything. A 3D model, the plan, the drawing, and a script that builds it in Blender.
+
+65
+00:06:18,699 --> 00:06:23,615
+James: Now, this is my favourite part. Same model. Same solver. Same viewer...
+
+66
+00:06:23,895 --> 00:06:26,118
+Ava: ...and a completely different building.
+
+67
+00:06:27,399 --> 00:06:32,315
+James: A twenty-megawatt AI factory. Liquid cooled. N plus one cooling, two-N power.
+
+68
+00:06:32,595 --> 00:06:37,895
+Ava: Three designs: liquid, hybrid, and air. Every rack, cooler, UPS and generator, placed.
+
+69
+00:06:38,175 --> 00:06:41,936
+James: And CP-SAT proves the layout, in about thirty milliseconds.
+
+70
+00:06:42,216 --> 00:06:51,747
+Ava: Then four lenses, each answering one question. Where does the power go? Where does it get hot? And what keeps running if something breaks?
+
+71
+00:06:52,747 --> 00:06:56,124
+James: So how does it know what keeps running?
+
+72
+00:06:56,404 --> 00:07:07,474
+Ava: Plain capacity arithmetic, over every power and cooling path. Lose a cooler, and the three that are left carry twenty-four hundred kilowatts, against a load of twenty-one hundred.
+
+73
+00:07:07,754 --> 00:07:11,515
+James: So it's still up, but with no backup left.
+
+74
+00:07:11,795 --> 00:07:16,326
+Ava: Exactly. And a thermal estimate shows where the heat builds up.
+
+75
+00:07:17,325 --> 00:07:20,702
+James: So, let's break it. The grid goes down.
+
+76
+00:07:20,982 --> 00:07:23,205
+Ava: And the generators take over.
+
+77
+00:07:23,485 --> 00:07:28,785
+James: Worst day, then. Grid down, a generator fails, and it's forty-two degrees outside.
+
+78
+00:07:29,065 --> 00:07:33,596
+Ava: And you can see exactly which racks go dark, and why.
+
+79
+00:07:34,596 --> 00:07:37,589
+Ava: And what does all of this cost?
+
+80
+00:07:37,869 --> 00:07:42,784
+James: To build, and to run. Where every kilowatt-hour goes. Dollars per GPU-hour.
+
+81
+00:07:43,064 --> 00:07:46,056
+Ava: Change the electricity price, and everything updates.
+
+82
+00:07:47,056 --> 00:07:53,510
+James: And it exports to OpenUSD, straight into NVIDIA Omniverse, with every part's power and path attached.
+
+83
+00:07:54,510 --> 00:07:57,503
+Ava: So, James. Does it actually hold up?
+
+84
+00:07:57,783 --> 00:08:07,314
+James: Twenty out of twenty test briefs accepted, with every check passing. Five out of five impossible requests answered with a proof, not a plan.
+
+85
+00:08:07,594 --> 00:08:14,047
+Ava: And it all runs on a laptop. A five-and-a-half-gigabyte model, and no data leaves the machine.
+
+86
+00:08:14,327 --> 00:08:16,550
+James: And no cost per plan.
+
+87
+00:08:17,550 --> 00:08:19,389
+Ava: So who's it for?
+
+88
+00:08:19,669 --> 00:08:23,815
+James: Health systems, testing a clinic before they sign the lease.
+
+89
+00:08:24,095 --> 00:08:28,626
+Ava: Architects, with a checked first plan in minutes, instead of days.
+
+90
+00:08:28,906 --> 00:08:34,975
+James: And AI infrastructure teams, comparing liquid against air, and seeing what survives a heat wave.
+
+91
+00:08:35,255 --> 00:08:42,094
+Ava: And the next building type is a config pack, not a new product. Schools. Offices. Warehouses. Labs.
+
+92
+00:08:43,093 --> 00:08:44,547
+James: From a sentence...
+
+93
+00:08:44,827 --> 00:08:48,589
+Ava: ...to a building you can walk, stress, and price.
+
+94
+00:08:48,869 --> 00:08:50,707
+James: This is Floorplan Intelligence.
+
+95
+00:08:50,987 --> 00:08:55,518
+Ava: Built for the Nebius and NVIDIA Global AI Hackathon. Thank you.
+

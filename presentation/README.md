@@ -21,6 +21,7 @@ Each file stands on its own, so a generator can take one file per slide group.
 | [13-demo-script.md](13-demo-script.md) | A 3–4 minute demo script covering both domains |
 | [14-slide-outline.md](14-slide-outline.md) | A suggested 12-slide deck with speaker notes |
 | [15-faq.md](15-faq.md) | Likely judge questions and short answers |
+| [demo/](demo/README.md) | **The demo video**: two-voice keynote script, Manim animations, slides, screenshots, recorder, voice and assembly tools ([runbook](demo/AGENT.md)) |
 
 ## Rules for anyone generating from this
 

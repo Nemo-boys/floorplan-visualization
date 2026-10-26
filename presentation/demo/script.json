@@ -1,0 +1,735 @@
+{
+  "title": "Floorplan Intelligence",
+  "event": "Nebius × NVIDIA Global AI Hackathon 2026",
+  "team": [
+    "Venu Arvind",
+    "Sarvesh Arunachalam M"
+  ],
+  "voices": {
+    "james": {
+      "who": "British male lead narrator",
+      "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+      "voice_name": "George",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.25,
+        "use_speaker_boost": true
+      }
+    },
+    "ava": {
+      "who": "American female co-narrator",
+      "voice_id": "EXAVITQu4vr4xnSDxMaL",
+      "voice_name": "Sarah",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.3,
+        "use_speaker_boost": true
+      }
+    }
+  },
+  "notes": "A conversation between James (British, lead) and Ava (American). Text in [brackets] is an ElevenLabs v3 audio tag; voice.py strips tags for models that don't support them. 'short: false' segments are dropped from the short cut (assemble.py --short). 'caption' is an on-screen lower third. 'visual.file' paths are relative to presentation/demo/.",
+  "segments": [
+    {
+      "id": "s01_open",
+      "act": "Opening",
+      "short": true,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/Opening.mp4"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Ava, every building starts the same way, doesn't it?"
+        },
+        {
+          "voice": "ava",
+          "text": "With a sentence. A clinic with six exam rooms. A twenty-megawatt AI factory."
+        },
+        {
+          "voice": "james",
+          "text": "And then weeks of drawings, before anyone knows if it actually works."
+        },
+        {
+          "voice": "ava",
+          "text": "So we asked ourselves... [softly] what if the sentence was enough?"
+        }
+      ]
+    },
+    {
+      "id": "s02_title",
+      "act": "Opening",
+      "short": true,
+      "visual": {
+        "type": "slide",
+        "file": "slides/png/01-title.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "This is Floorplan Intelligence."
+        },
+        {
+          "voice": "ava",
+          "text": "Brief in. Building out."
+        }
+      ]
+    },
+    {
+      "id": "s03_problem",
+      "act": "Problem",
+      "short": true,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/Problem.mp4"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "Now, James, the obvious move is to just ask an AI to draw the plan, right?"
+        },
+        {
+          "voice": "james",
+          "text": "We tried that. It draws one, very confidently. Rooms overlap. The corridor comes out ten times too wide. And then it tells you it's code-compliant."
+        },
+        {
+          "voice": "ava",
+          "text": "And a constraint solver?"
+        },
+        {
+          "voice": "james",
+          "text": "The opposite. Flawless geometry. But it can't read a single word of your brief."
+        }
+      ]
+    },
+    {
+      "id": "s04_pipeline",
+      "act": "Technology",
+      "short": true,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/Pipeline.mp4"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "So we split the job, by what each tool is genuinely good at."
+        },
+        {
+          "voice": "james",
+          "text": "NVIDIA Nemotron reads the intent. A solver makes the geometry exact. A rule checker cites what passed."
+        },
+        {
+          "voice": "ava",
+          "text": "And the browser lets anyone walk it, stress it, and price it."
+        },
+        {
+          "voice": "james",
+          "text": "The model proposes."
+        },
+        {
+          "voice": "ava",
+          "text": "The solver proves."
+        },
+        {
+          "voice": "james",
+          "text": "And the simulator tells you if it works."
+        }
+      ]
+    },
+    {
+      "id": "s05_nemotron",
+      "act": "Technology",
+      "short": true,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/Nemotron.mp4"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "Let's start with the model. James, why Nemotron?"
+        },
+        {
+          "voice": "james",
+          "text": "Nemotron Nano. Nine billion parameters, and it's a hybrid: mostly Mamba-2 state-space layers, which read long context in linear time, with attention only where it matters. Small enough to run on a laptop."
+        },
+        {
+          "voice": "ava",
+          "text": "And you didn't just use it off the shelf."
+        },
+        {
+          "voice": "james",
+          "text": "No. Two stages. First, Q-LoRA fine-tuning, on four hundred solver-certified clinic layouts, written in a compact plan language we designed for it."
+        },
+        {
+          "voice": "ava",
+          "text": "Then reinforcement learning, with GRPO."
+        },
+        {
+          "voice": "james",
+          "text": "Right, and with no human preference model. Four rewards, computed straight from the plan. Does it parse? Do rooms overlap? Can you reach every room? Does it meet the code?"
+        },
+        {
+          "voice": "ava",
+          "text": "So the plan itself grades the model."
+        }
+      ]
+    },
+    {
+      "id": "s06_grammar",
+      "act": "Technology",
+      "short": true,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/Grammar.mp4"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "And when it generates, there's a grammar running inside llama-C-P-P."
+        },
+        {
+          "voice": "james",
+          "text": "Which means every token it writes has to be legal. Every single line parses."
+        },
+        {
+          "voice": "ava",
+          "text": "But then you tested it properly."
+        },
+        {
+          "voice": "james",
+          "text": "We did, and here's the honest part. The room program was right, every time: which rooms, and how many. The coordinates were not. A corridor of eighteen hundred millimetres came out at eighteen thousand."
+        },
+        {
+          "voice": "ava",
+          "text": "So the model writes the program, and the geometry goes to a solver."
+        }
+      ]
+    },
+    {
+      "id": "s07_solver",
+      "act": "Technology",
+      "short": true,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/Solver.mp4"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Ava, walk us through the solver."
+        },
+        {
+          "voice": "ava",
+          "text": "Google OR-Tools CP-SAT, on a hundred-millimetre grid. Every room becomes integer variables. No two rooms can overlap, by construction. Locked rooms stay exactly where you put them, and rooms joined by a door must share a wall."
+        },
+        {
+          "voice": "james",
+          "text": "And everything else?"
+        },
+        {
+          "voice": "ava",
+          "text": "Moves as little as possible. That's the objective."
+        },
+        {
+          "voice": "james",
+          "text": "And when you ask for something impossible?"
+        },
+        {
+          "voice": "ava",
+          "text": "It doesn't make something up. It returns a proof: the smallest set of rooms that can't all fit, and the arithmetic why."
+        }
+      ]
+    },
+    {
+      "id": "s08_checks",
+      "act": "Technology",
+      "short": false,
+      "visual": {
+        "type": "slide",
+        "file": "slides/png/05-checks.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Then nine rules are checked. ADA door widths and turning circles, FGI exam-room sizes, IBC egress. Each one with the measured value, the requirement, and the citation."
+        },
+        {
+          "voice": "ava",
+          "text": "We never say compliant. We say exactly what passed."
+        }
+      ]
+    },
+    {
+      "id": "s09_to3d",
+      "act": "Technology",
+      "short": false,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/PlanTo3D.mp4"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "And the 3D comes from just rooms and doors?"
+        },
+        {
+          "voice": "james",
+          "text": "Just rooms and doors. The viewer derives the walls, the windows, the furniture, a walkable grid, and real A-star walking paths."
+        },
+        {
+          "voice": "ava",
+          "text": "Which keeps the simulation honest. Move the nurse station, and the nurses really do walk further."
+        }
+      ]
+    },
+    {
+      "id": "s09b_sim",
+      "act": "Technology",
+      "short": false,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/ClinicSim.mp4"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Then we simulate the day. It's a discrete-event engine. Patients, nurses, providers and the front desk, and every visit is a chain of events on a timeline."
+        },
+        {
+          "voice": "ava",
+          "text": "Check in, wait, vitals, the provider, checkout. And it's seeded, so it's deterministic: same seed, same day, down to the minute."
+        },
+        {
+          "voice": "james",
+          "text": "And we don't run one day. We run twenty, so you get a range, not a guess."
+        }
+      ]
+    },
+    {
+      "id": "s09c_work",
+      "act": "Technology",
+      "short": true,
+      "visual": {
+        "type": "slide",
+        "file": "slides/png/06-engineering.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "And none of this is a mock-up."
+        },
+        {
+          "voice": "james",
+          "text": "Two apps on one pipeline. About twenty-two thousand lines of TypeScript, five and a half thousand of Python, and two hundred and ten tests, including golden files that freeze the simulator's numbers to the minute."
+        },
+        {
+          "voice": "ava",
+          "text": "Running in the browser, on WebGPU."
+        }
+      ]
+    },
+    {
+      "id": "s10_demo",
+      "act": "Clinic demo",
+      "short": false,
+      "visual": {
+        "type": "slide",
+        "file": "slides/png/07-demo-clinic.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "Okay. Enough diagrams."
+        },
+        {
+          "voice": "james",
+          "text": "[laughs] Let's see it."
+        }
+      ]
+    },
+    {
+      "id": "s11_clinic_generate",
+      "act": "Clinic demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/clinic_generate.mp4",
+        "still": "screenshots/clinic-candidates.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "I'm describing a primary-care clinic. Six exam rooms, a nurse station, an accessible restroom. Generate."
+        },
+        {
+          "voice": "james",
+          "text": "Three candidates, ranked by the checks they pass. Nine out of nine, all three."
+        }
+      ],
+      "caption": "Recorded with the model off: a deterministic parser writes the room program. With Nemotron on, about 47 s on an M4 Pro."
+    },
+    {
+      "id": "s12_clinic_review",
+      "act": "Clinic demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/clinic_review.mp4",
+        "still": "screenshots/clinic-review.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Open one, and it's a building."
+        },
+        {
+          "voice": "ava",
+          "text": "Rendered live, in the browser. Click a room and it tells you what it's for. Or take the guided tour, in the order a patient walks it."
+        }
+      ]
+    },
+    {
+      "id": "s13_clinic_simulate",
+      "act": "Clinic demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/clinic_simulate.mp4",
+        "still": "screenshots/clinic-results.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Now, the real question. Does it cope with flu season?"
+        },
+        {
+          "voice": "ava",
+          "text": "Flu-season Monday. Ninety patients, and a morning rush. Run twenty days."
+        },
+        {
+          "voice": "james",
+          "text": "And there's the verdict, in plain words, with the bottleneck."
+        }
+      ]
+    },
+    {
+      "id": "s14_clinic_assistant",
+      "act": "Clinic demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/clinic_assistant.mp4",
+        "still": "screenshots/clinic-assistant.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "What if we add a nurse?"
+        },
+        {
+          "voice": "james",
+          "text": "The assistant changes the day, runs it again, and comes back with the new wait."
+        },
+        {
+          "voice": "ava",
+          "text": "And it never guesses. Every number comes from the same engine you see on screen."
+        }
+      ]
+    },
+    {
+      "id": "s15_clinic_compare",
+      "act": "Clinic demo",
+      "short": false,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/clinic_compare.mp4",
+        "still": "screenshots/clinic-compare.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Can we compare the layouts?"
+        },
+        {
+          "voice": "ava",
+          "text": "Same day, every plan, side by side."
+        }
+      ]
+    },
+    {
+      "id": "s16_clinic_edit",
+      "act": "Clinic demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/clinic_edit.mp4",
+        "still": "screenshots/clinic-edit.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "And edits are just plain language. Make the waiting room twenty percent bigger, and keep the restrooms where they are."
+        },
+        {
+          "voice": "james",
+          "text": "The solver keeps what you asked for, and moves the rest."
+        },
+        {
+          "voice": "ava",
+          "text": "And if I ask for something impossible?"
+        },
+        {
+          "voice": "james",
+          "text": "It tells you exactly why."
+        }
+      ]
+    },
+    {
+      "id": "s17_clinic_export",
+      "act": "Clinic demo",
+      "short": false,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/clinic_export.mp4",
+        "still": "screenshots/clinic-export.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "Then export everything. A 3D model, the plan, the drawing, and a script that builds it in Blender."
+        }
+      ]
+    },
+    {
+      "id": "s18_same",
+      "act": "Data center demo",
+      "short": true,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/SameEngine.mp4"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "Now, this is my favourite part. Same model. Same solver. Same viewer..."
+        },
+        {
+          "voice": "ava",
+          "text": "[excited] ...and a completely different building."
+        }
+      ]
+    },
+    {
+      "id": "s19_dc_design",
+      "act": "Data center demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/dc_design.mp4",
+        "still": "screenshots/dc-design.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "A twenty-megawatt AI factory. Liquid cooled. N plus one cooling, two-N power."
+        },
+        {
+          "voice": "ava",
+          "text": "Three designs: liquid, hybrid, and air. Every rack, cooler, UPS and generator, placed."
+        },
+        {
+          "voice": "james",
+          "text": "And CP-SAT proves the layout, in about thirty milliseconds."
+        },
+        {
+          "voice": "ava",
+          "text": "Then four lenses, each answering one question. Where does the power go? Where does it get hot? And what keeps running if something breaks?"
+        }
+      ]
+    },
+    {
+      "id": "s20_redundancy",
+      "act": "Data center demo",
+      "short": false,
+      "visual": {
+        "type": "anim",
+        "file": "animations/mp4/Redundancy.mp4"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "So how does it know what keeps running?"
+        },
+        {
+          "voice": "ava",
+          "text": "Plain capacity arithmetic, over every power and cooling path. Lose a cooler, and the three that are left carry twenty-four hundred kilowatts, against a load of twenty-one hundred."
+        },
+        {
+          "voice": "james",
+          "text": "So it's still up, but with no backup left."
+        },
+        {
+          "voice": "ava",
+          "text": "Exactly. And a thermal estimate shows where the heat builds up."
+        }
+      ]
+    },
+    {
+      "id": "s21_dc_test",
+      "act": "Data center demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/dc_test.mp4",
+        "still": "screenshots/dc-test.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "So, let's break it. The grid goes down."
+        },
+        {
+          "voice": "ava",
+          "text": "And the generators take over."
+        },
+        {
+          "voice": "james",
+          "text": "Worst day, then. Grid down, a generator fails, and it's forty-two degrees outside."
+        },
+        {
+          "voice": "ava",
+          "text": "And you can see exactly which racks go dark, and why."
+        }
+      ]
+    },
+    {
+      "id": "s22_dc_cost",
+      "act": "Data center demo",
+      "short": true,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/dc_cost.mp4",
+        "still": "screenshots/dc-cost.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "And what does all of this cost?"
+        },
+        {
+          "voice": "james",
+          "text": "To build, and to run. Where every kilowatt-hour goes. Dollars per GPU-hour."
+        },
+        {
+          "voice": "ava",
+          "text": "Change the electricity price, and everything updates."
+        }
+      ]
+    },
+    {
+      "id": "s23_dc_export",
+      "act": "Data center demo",
+      "short": false,
+      "visual": {
+        "type": "rec",
+        "file": "recordings/dc_export.mp4",
+        "still": "screenshots/dc-export.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "And it exports to OpenUSD, straight into NVIDIA Omniverse, with every part's power and path attached."
+        }
+      ]
+    },
+    {
+      "id": "s24_numbers",
+      "act": "Results",
+      "short": true,
+      "visual": {
+        "type": "slide",
+        "file": "slides/png/10-numbers.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "So, James. Does it actually hold up?"
+        },
+        {
+          "voice": "james",
+          "text": "Twenty out of twenty test briefs accepted, with every check passing. Five out of five impossible requests answered with a proof, not a plan."
+        },
+        {
+          "voice": "ava",
+          "text": "And it all runs on a laptop. A five-and-a-half-gigabyte model, and no data leaves the machine."
+        },
+        {
+          "voice": "james",
+          "text": "And no cost per plan."
+        }
+      ]
+    },
+    {
+      "id": "s25_usecases",
+      "act": "Where it goes",
+      "short": true,
+      "visual": {
+        "type": "slide",
+        "file": "slides/png/11-use-cases.png"
+      },
+      "lines": [
+        {
+          "voice": "ava",
+          "text": "So who's it for?"
+        },
+        {
+          "voice": "james",
+          "text": "Health systems, testing a clinic before they sign the lease."
+        },
+        {
+          "voice": "ava",
+          "text": "Architects, with a checked first plan in minutes, instead of days."
+        },
+        {
+          "voice": "james",
+          "text": "And AI infrastructure teams, comparing liquid against air, and seeing what survives a heat wave."
+        },
+        {
+          "voice": "ava",
+          "text": "And the next building type is a config pack, not a new product. Schools. Offices. Warehouses. Labs."
+        }
+      ]
+    },
+    {
+      "id": "s26_close",
+      "act": "Close",
+      "short": true,
+      "visual": {
+        "type": "slide",
+        "file": "slides/png/12-closing.png"
+      },
+      "lines": [
+        {
+          "voice": "james",
+          "text": "From a sentence..."
+        },
+        {
+          "voice": "ava",
+          "text": "...to a building you can walk, stress, and price."
+        },
+        {
+          "voice": "james",
+          "text": "This is Floorplan Intelligence."
+        },
+        {
+          "voice": "ava",
+          "text": "Built for the Nebius and NVIDIA Global AI Hackathon. [warmly] Thank you."
+        }
+      ]
+    }
+  ]
+}

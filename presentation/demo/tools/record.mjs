@@ -19,9 +19,9 @@ async function orbit(page, dx = 260, ms = 2600) {
 }
 
 async function ask(page, text, settleMs) {
-  if (!(await page.locator('#assistant').isVisible().catch(() => false))) await click(page, '#assistantBtn');
-  await wait(page, 500);
-  const box = page.locator('#assistant textarea, .assistant textarea, aside textarea').last();
+  const box = page.locator('textarea[placeholder^="Ask or tell"]').last();
+  const onScreen = async () => { const r = await box.boundingBox().catch(() => null); return r && r.x >= 0 && r.y >= 0 && r.x + r.width <= 1920 && r.y + r.height <= 1080; };
+  if (!(await onScreen())) { await click(page, '.assistant-btn:visible'); await wait(page, 900); }
   const b = await box.boundingBox();
   await moveTo(page, b.x + 60, b.y + b.height / 2, 500);
   await box.click();
@@ -104,8 +104,6 @@ const SHOTS = {
     target: 7, url: '/',
     prep: async page => {
       await SHOTS.clinic_assistant.prep(page);
-      await page.locator('#assistantBtn').click();
-      await wait(page, 600);
     },
     act: async page => { await ask(page, 'Compare the layouts', 6000); }
   },
@@ -114,11 +112,14 @@ const SHOTS = {
     act: async page => {
       await click(page, '#editToggle');
       await wait(page, 900);
+      await click(page, '#askBigger');
+      await wait(page, 700);
       await click(page, '#editText');
       await page.locator('#editText').fill('');
       await type(page, 'Make the waiting room 20% bigger, keep the restrooms fixed', 26);
       await click(page, '#editGo');
       await wait(page, 6000);
+      if (!(await page.locator('#editText').isVisible().catch(() => false))) await click(page, '#askBigger');
       await click(page, '#editText');
       await page.locator('#editText').fill('');
       await type(page, 'Make the waiting room 250% bigger', 26);
@@ -171,7 +172,7 @@ const SHOTS = {
     target: 12, url: '/datacenter',
     prep: SHOTS_dcPrep(),
     act: async page => {
-      await click(page, 'button:has-text("Cost")');
+      await click(page, '[data-step="cost"]');
       await wait(page, 3500);
       await ask(page, 'Electricity at 15 cents', 6000);
     }
@@ -205,7 +206,7 @@ for (const [name, shot] of Object.entries(SHOTS)) {
     await stop({ trimStart: 0.2 });
     console.log('recorded', name, `(dialogue ~${shot.target} s)`);
   } catch (e) {
-    console.log('FAILED  ', name, String(e.message || e).split('\n')[0]);
+    console.log('FAILED  ', name, String(e.message || e).slice(0, 1500));
   } finally {
     await ctx.close();
     await browser.close();

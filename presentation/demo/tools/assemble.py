@@ -146,7 +146,7 @@ def render_segment(k: int, seg: dict, p: dict, a: argparse.Namespace, fnt: str, 
         ms = int(ln["start"] * 1000)
         mix.append(f"[{j + 1}:a]aresample=48000,aformat=channel_layouts=stereo,adelay={ms}|{ms}[a{j}]")
     cmd += audio_in + ["-f", "lavfi", "-t", f"{p['len']}", "-i", "anullsrc=r=48000:cl=stereo"]
-    silent = len(audio_in) + 1
+    silent = len(mix) + 1
     fc = [f"[0:v]{vf}[v]"] + mix
     labels = "".join(f"[a{j}]" for j in range(len(mix))) + f"[{silent}:a]"
     fc.append(f"{labels}amix=inputs={len(mix) + 1}:normalize=0:duration=longest,atrim=0:{p['len']}[a]")

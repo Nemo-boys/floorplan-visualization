@@ -3,3 +3,7 @@ animations/mp4-draft/
 animations/__pycache__/
 out/build/
 recordings/*.frames/
+recordings/*.mp4
+out/floorplan-intelligence.mp4
+out/floorplan-intelligence-short.mp4
+.DS_Store

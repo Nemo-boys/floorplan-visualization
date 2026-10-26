@@ -108,7 +108,7 @@ def main() -> None:
                 continue
             v = voices[line["voice"]]
             body = {"text": clean(line["text"], model), "model_id": model, "voice_settings": settings_for(model, v["settings"])}
-            audio = call("POST", f"/v1/text-to-speech/{v['voice_id']}?output_format=mp3_44100_192", key, body, accept="audio/mpeg")
+            audio = call("POST", f"/v1/text-to-speech/{v['voice_id']}?output_format=mp3_44100_128", key, body, accept="audio/mpeg")
             out.write_bytes(audio)
             n += 1
             print(f"  {out.name}  ({len(audio) // 1024} KB)  {line['text'][:60]}")
@@ -119,7 +119,7 @@ def main() -> None:
         body = {"prompt": "Minimal, warm, modern product-keynote underscore. Soft felt piano and airy synth pads, slow pulse, "
                           "hopeful and confident, no drums at the start, gentle build, no vocals. Sits quietly under narration.",
                 "music_length_ms": 180000}
-        audio = call("POST", "/v1/music?output_format=mp3_44100_192", key, body, accept="audio/mpeg")
+        audio = call("POST", "/v1/music?output_format=mp3_44100_128", key, body, accept="audio/mpeg")
         (DEMO / "audio" / "music.mp3").write_bytes(audio)
         print("music bed -> audio/music.mp3 (assemble.py loops it and ducks it under the voices)")
 

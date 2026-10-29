@@ -14,7 +14,7 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def no_model_env(monkeypatch):
-    for k in ("AEGIS_CHAT_URL", "AEGIS_CHAT_KEY", "AEGIS_CHAT_MODEL", "NVIDIA_API_KEY", "OPENROUTER_API_KEY", "AEGIS_CHAT_EXTRA", "AEGIS_CHAT_NO_THINK"):
+    for k in ("AEGIS_CHAT_URL", "AEGIS_CHAT_KEY", "AEGIS_CHAT_MODEL", "NEBIUS_API_KEY", "NVIDIA_API_KEY", "OPENROUTER_API_KEY", "AEGIS_CHAT_LABEL", "AEGIS_CHAT_EXTRA", "AEGIS_CHAT_NO_THINK"):
         monkeypatch.delenv(k, raising=False)
     yield
     chat.transport = None
@@ -31,6 +31,17 @@ def test_health_with_nvidia_key(monkeypatch):
     monkeypatch.setenv("NVIDIA_API_KEY", "nvapi-test")
     body = client.get("/api/chat/health").json()
     assert body == {"available": True, "label": "Nemotron", "model": chat.DEFAULT_MODEL}
+
+
+def test_health_with_nebius_key_uses_token_factory(monkeypatch):
+    monkeypatch.setenv("NEBIUS_API_KEY", "nebius-test")
+    monkeypatch.setenv("NVIDIA_API_KEY", "nvapi-test")  # Token Factory wins over the NVIDIA catalog
+    assert chat.chat_config()["url"] == chat.NEBIUS_URL
+    body = client.get("/api/chat/health").json()
+    assert body == {"available": True, "label": "Nemotron Ultra", "model": chat.NEBIUS_MODEL}
+    # Token Factory's Nemotron 3 reasons unless its chat template is told not to
+    payload = chat.build_payload(chat.ChatRequest(messages=[{"role": "user", "content": "hi"}]), chat.chat_config())
+    assert payload["chat_template_kwargs"] == {"enable_thinking": False}
 
 
 def test_streams_and_forwards_tools(monkeypatch):

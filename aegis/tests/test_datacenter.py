@@ -17,7 +17,7 @@ PROGRAM = json.load(open(os.path.join(os.path.dirname(__file__), "dc_program_2mw
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):
-    for k in ("AEGIS_CHAT_URL", "AEGIS_CHAT_KEY", "AEGIS_CHAT_MODEL", "NVIDIA_API_KEY", "OPENROUTER_API_KEY"):
+    for k in ("AEGIS_CHAT_URL", "AEGIS_CHAT_KEY", "AEGIS_CHAT_MODEL", "NEBIUS_API_KEY", "NVIDIA_API_KEY", "OPENROUTER_API_KEY"):
         monkeypatch.delenv(k, raising=False)
     monkeypatch.setenv("AEGISPLAN_DISABLE_MODEL", "1")
     yield

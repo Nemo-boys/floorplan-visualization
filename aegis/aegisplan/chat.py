@@ -2,11 +2,12 @@
 
 The browser runs the agent loop and every tool against its own live state; this route only forwards
 OpenAI-format chat requests (with tool definitions) to a model and streams the answer back, so API keys
-never reach the page. Any OpenAI-compatible endpoint works: NVIDIA's API (build.nvidia.com / NIM),
-OpenRouter, or a local vLLM or llama.cpp server running Nemotron.
+never reach the page. Any OpenAI-compatible endpoint works: Nebius Token Factory, NVIDIA's API
+(build.nvidia.com / NIM), OpenRouter, or a local vLLM or llama.cpp server running Nemotron.
 
 Configuration, first match wins:
   AEGIS_CHAT_URL (+ AEGIS_CHAT_KEY, AEGIS_CHAT_MODEL)   any OpenAI-compatible /v1 endpoint
+  NEBIUS_API_KEY                                        https://api.tokenfactory.nebius.com/v1 (Nemotron 3 Ultra)
   NVIDIA_API_KEY                                        https://integrate.api.nvidia.com/v1
   OPENROUTER_API_KEY                                    https://openrouter.ai/api/v1
 Optional: AEGIS_CHAT_LABEL (shown in the panel), AEGIS_CHAT_NO_THINK=0 to let Nemotron reason before
@@ -25,6 +26,8 @@ from pydantic import BaseModel
 router = APIRouter()
 
 DEFAULT_MODEL = "nvidia/nvidia-nemotron-nano-9b-v2"
+NEBIUS_URL = "https://api.tokenfactory.nebius.com/v1"
+NEBIUS_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
 MAX_MESSAGES = 80
 MAX_CHARS = 200_000
 
@@ -37,6 +40,10 @@ def chat_config() -> Optional[Dict[str, str]]:
     label = os.environ.get("AEGIS_CHAT_LABEL", "Nemotron")
     if os.environ.get("AEGIS_CHAT_URL"):
         url, key = os.environ["AEGIS_CHAT_URL"], os.environ.get("AEGIS_CHAT_KEY", "")
+    elif os.environ.get("NEBIUS_API_KEY"):
+        url, key = NEBIUS_URL, os.environ["NEBIUS_API_KEY"]
+        model = model or NEBIUS_MODEL
+        label = os.environ.get("AEGIS_CHAT_LABEL", "Nemotron Ultra")
     elif os.environ.get("NVIDIA_API_KEY"):
         url, key = "https://integrate.api.nvidia.com/v1", os.environ["NVIDIA_API_KEY"]
     elif os.environ.get("OPENROUTER_API_KEY"):
@@ -61,10 +68,22 @@ async def chat_health():
     return {"available": True, "label": cfg["label"], "model": cfg["model"]}
 
 
+def no_think(cfg: Dict[str, str]) -> bool:
+    return os.environ.get("AEGIS_CHAT_NO_THINK", "1") != "0" and "nemotron" in cfg["model"].lower()
+
+
+def no_think_fields(cfg: Dict[str, str]) -> Dict[str, Any]:
+    """Nemotron 3 on Token Factory ignores /no_think and reasons anyway (2x slower, 4x the tokens); its chat
+    template switch turns that off."""
+    if no_think(cfg) and cfg["url"] == NEBIUS_URL:
+        return {"chat_template_kwargs": {"enable_thinking": False}}
+    return {}
+
+
 def build_payload(req: ChatRequest, cfg: Dict[str, str]) -> Dict[str, Any]:
     messages = [dict(m) for m in req.messages]
     # Nemotron answers straight away with /no_think in the system prompt; thinking adds seconds per turn.
-    if os.environ.get("AEGIS_CHAT_NO_THINK", "1") != "0" and "nemotron" in cfg["model"].lower():
+    if no_think(cfg):
         if messages and messages[0].get("role") == "system":
             messages[0]["content"] = f"/no_think\n{messages[0].get('content') or ''}"
         else:
@@ -75,6 +94,7 @@ def build_payload(req: ChatRequest, cfg: Dict[str, str]) -> Dict[str, Any]:
         "stream": req.stream,
         "temperature": 0.3,
         "max_tokens": 900,
+        **no_think_fields(cfg),
     }
     if req.tools:
         payload["tools"] = req.tools

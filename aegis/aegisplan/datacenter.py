@@ -84,7 +84,9 @@ async def _ask_remote(brief: str, cfg: Dict[str, str]) -> str:
         "model": cfg["model"],
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": brief}],
         "temperature": 0,
-        "max_tokens": 300,
+        # room for a reasoning pass if the endpoint thinks anyway; the JSON itself is ~120 tokens
+        "max_tokens": 800,
+        **chat.no_think_fields(cfg),
     }
     async with httpx.AsyncClient(timeout=20.0, transport=chat.transport) as client:
         resp = await client.post(f"{cfg['url']}/chat/completions", headers=headers, json=payload)

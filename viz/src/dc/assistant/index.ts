@@ -1,6 +1,7 @@
 /* The data center studio's assistant: the shared chat panel with this app's tools, context and first words. */
 import { createChatPanel, type ChatPanel } from '../../assistant/panel';
 import { detectRemote, remoteProvider } from '../../assistant/providers';
+import { WEB_SEARCH_RULE, detectSearch, webSearchTool } from '../../assistant/websearch';
 import { fmtPower } from '../engine/brief';
 import { fmtMoney } from '../engine/cost';
 import { evaluate } from '../engine/status';
@@ -22,6 +23,8 @@ How you work:
 - Link parts and rooms as [label](#id), e.g. [Liquid cooler 1.1](#cdu_h1_1), so people can click to fly there. Only use ids a tool returned.
 - These are planning estimates, not an engineer's sign-off. Say so if someone asks about building it for real.`;
 
+let searchRule = ''; // set once the server says web search is configured
+
 function context(): string {
   const o = current();
   const snap: Record<string, unknown> = { now: overview() };
@@ -30,7 +33,7 @@ function context(): string {
     snap.test = { headline: r.headline, sentence: r.sentence, broken: [...state.conditions.failed] };
   }
   if (state.pick) snap.picked = state.pick;
-  return `${PROMPT}\n\nLive context (JSON):\n${JSON.stringify(snap)}`;
+  return `${PROMPT}${searchRule}\n\nLive context (JSON):\n${JSON.stringify(snap)}`;
 }
 
 function suggestions(): string[] {
@@ -81,6 +84,11 @@ export function mountAssistant(): { panel: ChatPanel; button: HTMLElement } {
   });
   panel.setProviders([offline]);
   detectRemote().then((info) => info && panel.setProviders([remoteProvider(info), offline]));
+  detectSearch().then((ok) => {
+    if (!ok) return;
+    panel.addTools([webSearchTool()]);
+    searchRule = `\n${WEB_SEARCH_RULE}`;
+  });
 
   // top-bar button with an unread dot
   const dot = h('span', { class: 'unread', 'aria-hidden': 'true' });

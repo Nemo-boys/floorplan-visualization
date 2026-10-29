@@ -29,6 +29,8 @@ export interface ChatPanel {
   say(text: string, chips?: string[], opts?: { peek?: boolean }): void;
   ask(text: string): void;
   setProviders(list: Provider[]): void;
+  /* Tools that depend on the server (web search) join once it answers. */
+  addTools(list: Tool[]): void;
   onChange(fn: (s: { open: boolean; unread: number; busy: boolean }) => void): void;
 }
 
@@ -53,6 +55,7 @@ const MAX_HISTORY = 30;
 export function createChatPanel(o: PanelOptions): ChatPanel {
   let providers: Provider[] = [];
   let provider: Provider | null = null;
+  let tools = o.tools;
   let history: ChatMessage[] = [];
   let open = false;
   let unread = 0;
@@ -237,7 +240,7 @@ export function createChatPanel(o: PanelOptions): ChatPanel {
       try {
         const added = await runTurn({
           provider: chain[i],
-          tools: o.tools,
+          tools,
           system: o.system(),
           history: trimmed(),
           onText: (t) => msg.text(t),
@@ -395,6 +398,9 @@ export function createChatPanel(o: PanelOptions): ChatPanel {
       // a real model, once found, takes over from the built-in assistant
       if (!provider || !list.includes(provider) || (list[0]?.live && !provider.live)) provider = list[0] ?? null;
       paintPill();
+    },
+    addTools(list) {
+      tools = [...tools, ...list.filter((t) => !tools.some((x) => x.name === t.name))];
     },
     onChange: (fn) => listeners.push(fn)
   };

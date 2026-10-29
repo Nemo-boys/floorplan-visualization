@@ -36,6 +36,8 @@ AEGIS_CHAT_MODEL=<model id>                             # optional: any OpenAI-c
 
 The key stays on the server (`/api/chat` proxies and streams); the browser runs the tools. See `aegis/aegisplan/chat.py`.
 
+Both assistants can also search the web (codes, equipment, prices, news) through [Tavily](https://tavily.com), citing their sources. Put `TAVILY_API_KEY=tvly-...` in `aegis/.env` (gitignored; the server reads it at start) or the environment. Without it the `web_search` tool simply isn't offered. See `aegis/aegisplan/search.py`.
+
 With the server running, the studio also uses AegisPlan for the building itself (`aegis/aegisplan/datacenter.py`): Nemotron reads the brief (`/api/dc/brief`, filling in what the sentence implies; numbers you type always win) and CP-SAT proves the room layout (`/api/dc/check`: no overlaps, every door joins rooms that touch, and no shorter building fits). Each design downloads as OpenUSD for Omniverse or as JSON with every number.
 
 Demo script: [docs/DEMO.md](docs/DEMO.md). Measured benchmark: [docs/BENCHMARK.md](docs/BENCHMARK.md) (`make bench`).

@@ -18,9 +18,26 @@ from aegisplan.edits import apply_edit
 from aegisplan.gguf_engine import find_gguf_model_path
 from aegisplan.chat import router as chat_router
 from aegisplan.datacenter import router as dc_router
+from aegisplan.search import router as search_router
 
 # The viewer's production build (viz/dist), served at / when it exists.
 VIZ_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "viz", "dist"))
+
+
+def load_env_file(path: str) -> None:
+    """KEY=value lines from aegis/.env (gitignored) for server-side keys; real environment variables win."""
+    if not os.path.isfile(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+
+
+load_env_file(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 app = FastAPI(
     title="AegisPlan API",
@@ -41,6 +58,8 @@ router = GenerationRouter()
 app.include_router(chat_router)
 # Data Center Studio: Nemotron reads the brief, CP-SAT checks the building program (/api/dc/*).
 app.include_router(dc_router)
+# Web search for the assistants, through Tavily (/api/search).
+app.include_router(search_router)
 
 
 class GenerateRequest(BaseModel):

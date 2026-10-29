@@ -2,6 +2,7 @@
    setup and the shared assistant with the clinic's tools. Nothing here runs with ?look=reference. */
 import { createChatPanel } from '../../assistant/panel';
 import { detectRemote, remoteProvider } from '../../assistant/providers';
+import { WEB_SEARCH_RULE, detectSearch, webSearchTool } from '../../assistant/websearch';
 import { fmtClock, fmtMin } from '../../engine';
 import { state } from '../../state';
 import { focusRoom } from '../../view3d/marks';
@@ -63,13 +64,14 @@ function themeToggle(): HTMLButtonElement {
 function mountAssistant(): void {
   const app = $('#app');
   let busy = false;
+  let searchRule = '';
   const panel = createChatPanel({
     title: 'Assistant',
     emptyTitle: 'Ask about your clinic',
     emptyText: 'I can read the plan, fly to any room, change who works, run clinic days and compare layouts.',
     placeholder: 'Ask or tell me what to do…',
     tools: TOOLS,
-    system: () => `${PROMPT}\n\nLive context (JSON):\n${JSON.stringify(overview())}`,
+    system: () => `${PROMPT}${searchRule}\n\nLive context (JSON):\n${JSON.stringify(overview())}`,
     suggestions: () => {
       if (!state.P) return ['What can you do?', 'Which layout should I start with?'];
       if (state.step === 'simulate')
@@ -89,6 +91,11 @@ function mountAssistant(): void {
   const offline = offlineProvider();
   panel.setProviders([offline]);
   detectRemote().then(info => info && panel.setProviders([remoteProvider(info), offline]));
+  detectSearch().then(ok => {
+    if (!ok) return;
+    panel.addTools([webSearchTool()]);
+    searchRule = `\n${WEB_SEARCH_RULE}`;
+  });
   document.body.append(panel.el, panel.peek);
 
   const btn = document.createElement('button');

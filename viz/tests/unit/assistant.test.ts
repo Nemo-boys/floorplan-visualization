@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseArgs, runTurn } from '../../src/assistant/agent';
 import { renderMarkdown } from '../../src/assistant/markdown';
 import { visibleText } from '../../src/assistant/providers';
 import type { ChatMessage, Provider, Tool } from '../../src/assistant/types';
+import { detectSearch, webSearchTool, type SearchResult } from '../../src/assistant/websearch';
 
 describe('assistant agent loop', () => {
   it('runs the tools a provider calls, feeds the results back and returns the answer', async () => {
@@ -69,5 +70,36 @@ describe('assistant text', () => {
     expect(html).toContain('<strong>Bold</strong> &lt;b&gt;x&lt;/b&gt;');
     expect(html).toContain('<ul><li>one</li><li><button type="button" class="ref" data-ref="cdu_h1_1">Cooler 1</button></li></ul>');
     expect(renderMarkdown('[x](javascript:alert(1))')).not.toContain('href="javascript');
+  });
+});
+
+describe('web search tool', () => {
+  it('posts the query to /api/search and labels the result', async () => {
+    const calls: { url: string; body: unknown }[] = [];
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/health')) return new Response(JSON.stringify({ available: true }));
+      calls.push({ url, body: JSON.parse(String(init?.body)) });
+      return new Response(JSON.stringify({ query: 'q', answer: '44 in', results: [{ title: 'ADA', url: 'https://ada.gov', content: 'x' }] }));
+    });
+    try {
+      expect(await detectSearch()).toBe(true);
+      const tool = webSearchTool();
+      const out = (await tool.run({ query: ' ADA corridor ', max_results: 40, topic: 'news' })) as SearchResult;
+      expect(calls).toEqual([{ url: '/api/search', body: { query: 'ADA corridor', max_results: 8, topic: 'news' } }]);
+      expect(out.answer).toBe('44 in');
+      expect(tool.label?.({ query: 'ADA corridor' }, out)).toBe('Searched the web for “ADA corridor” (1 sources)');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('turns a server refusal into an error the agent reports', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ detail: 'Web search is not configured on the server (TAVILY_API_KEY).' }), { status: 503 }));
+    try {
+      expect(await detectSearch()).toBe(false);
+      await expect(webSearchTool().run({ query: 'x' })).rejects.toThrow('not configured');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

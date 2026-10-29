@@ -3,6 +3,9 @@
 Provides high-throughput, low-latency local LLM generation for NVIDIA Nemotron 9B
 hybrid architecture quantized models (Q4_K_M, Q8_0, etc.) without requiring cloud
 APIs or high-memory unquantized PyTorch execution.
+
+AEGIS_GGUF_URL (+ AEGIS_GGUF_KEY) swaps in the same model behind llama.cpp's server on a cloud GPU
+(deploy/modal/model.py): same chat template, same GBNF grammar, no local weights needed.
 """
 
 from typing import List, Dict, Any, Optional
@@ -54,8 +57,21 @@ def find_gguf_model_path() -> Optional[str]:
     return None
 
 
+def remote_model_url() -> str:
+    """The llama.cpp server holding the model, if one is configured (and the model isn't disabled)."""
+    if os.environ.get("AEGISPLAN_DISABLE_MODEL"):
+        return ""
+    return os.environ.get("AEGIS_GGUF_URL", "").strip().rstrip("/")
+
+
+def model_label() -> str:
+    return "Nemotron Nano 9B (cloud GPU)" if remote_model_url() else "Nemotron Nano 9B (local)"
+
+
 def is_gguf_available() -> bool:
-    """Check if llama-cpp-python is installed and a GGUF model exists."""
+    """Check if the model is reachable: a remote llama.cpp server, or llama-cpp-python plus a local GGUF."""
+    if remote_model_url():
+        return True
     try:
         import llama_cpp  # noqa: F401
     except ImportError:
@@ -215,9 +231,44 @@ class GGUFInferenceEngine:
         return out["choices"][0]["message"]["content"].strip()
 
 
-def get_gguf_engine() -> Optional[GGUFInferenceEngine]:
-    """Retrieve or initialize the singleton GGUF engine."""
+class RemoteGGUFEngine:
+    """The same GGUF behind llama.cpp's OpenAI-compatible server, which takes a GBNF grammar per request."""
+
+    # Tests replace this with an httpx.MockTransport.
+    transport = None
+
+    def __init__(self, url: str, key: str = ""):
+        self.url = url
+        self.key = key
+
+    def generate_chat(
+        self,
+        messages: List[Dict[str, str]],
+        grammar: Optional[str] = None,
+        temperature: float = 0.0,
+        max_tokens: int = 900,
+    ) -> str:
+        import httpx
+
+        payload: Dict[str, Any] = {"messages": messages, "temperature": temperature, "max_tokens": max_tokens}
+        if grammar:
+            payload["grammar"] = grammar
+        headers = {"Authorization": f"Bearer {self.key}"} if self.key else {}
+        # a GPU that scaled to zero loads the model first (~30-60 s)
+        with httpx.Client(timeout=httpx.Timeout(300.0, connect=30.0), transport=self.transport) as client:
+            resp = client.post(f"{self.url}/v1/chat/completions", headers=headers, json=payload)
+            resp.raise_for_status()
+            return (resp.json()["choices"][0]["message"]["content"] or "").strip()
+
+
+def get_gguf_engine() -> Optional[Any]:
+    """Retrieve or initialize the singleton GGUF engine (remote when AEGIS_GGUF_URL is set)."""
     global _GLOBAL_GGUF_ENGINE
+    url = remote_model_url()
+    if url:
+        if not isinstance(_GLOBAL_GGUF_ENGINE, RemoteGGUFEngine) or _GLOBAL_GGUF_ENGINE.url != url:
+            _GLOBAL_GGUF_ENGINE = RemoteGGUFEngine(url, os.environ.get("AEGIS_GGUF_KEY", ""))
+        return _GLOBAL_GGUF_ENGINE
     if _GLOBAL_GGUF_ENGINE is None and is_gguf_available():
         try:
             _GLOBAL_GGUF_ENGINE = GGUFInferenceEngine()

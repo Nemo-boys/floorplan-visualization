@@ -15,7 +15,7 @@ from aegisplan.cpsat_repair import repair_plan
 from aegisplan.router import GenerationRouter, FEW_SHOT_EXEMPLAR
 from aegisplan.export_viz import to_viz_plan
 from aegisplan.edits import apply_edit
-from aegisplan.gguf_engine import find_gguf_model_path
+from aegisplan.gguf_engine import find_gguf_model_path, is_gguf_available, remote_model_url
 from aegisplan.chat import router as chat_router
 from aegisplan.datacenter import router as dc_router
 from aegisplan.search import router as search_router
@@ -96,19 +96,16 @@ class EditRoomRequest(BaseModel):
 @app.get("/api/health")
 async def health():
     model_path = find_gguf_model_path()
-    try:
-        import llama_cpp  # noqa: F401
-        has_llama = True
-    except ImportError:
-        has_llama = False
+    remote = bool(remote_model_url())
     return {
         "status": "healthy",
         "service": "AegisPlan",
         "version": "0.1.0",
         "engine": "CP-SAT + Nemotron Nano 9B v2 (fine-tuned)",
         "model": {
-            "gguf": os.path.basename(model_path) if model_path else None,
-            "available": bool(model_path and has_llama),
+            "gguf": os.path.basename(model_path) if model_path else ("nemotron_aegisplan_q4_k_m.gguf" if remote else None),
+            "available": is_gguf_available(),
+            "where": "remote" if remote else "local",
         },
     }
 

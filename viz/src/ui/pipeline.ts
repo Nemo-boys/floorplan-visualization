@@ -10,7 +10,7 @@ import { $, esc } from './dom';
 import { importPlan } from './versions';
 
 interface Health {
-  model?: { available: boolean; gguf: string | null };
+  model?: { available: boolean; gguf: string | null; where?: 'local' | 'remote' };
 }
 /* AegisPlan's own plan document for each generated plan.json, so edits can go back to it. */
 type AegisPlan = Record<string, unknown>;
@@ -31,7 +31,7 @@ export interface Candidate {
   viz_plan: PlanJson;
 }
 
-export const pipeline = { online: false, model: false, busy: false, candidates: [] as Candidate[] };
+export const pipeline = { online: false, model: false, remote: false, busy: false, candidates: [] as Candidate[] };
 
 const DEFAULT_BRIEF =
   'Primary care clinic with 6 exam rooms, a nurse station, reception and waiting, an ADA restroom, ' +
@@ -48,12 +48,13 @@ export async function initPipeline(): Promise<void> {
   }
   pipeline.online = true;
   pipeline.model = !!health.model?.available;
+  pipeline.remote = health.model?.where === 'remote';
   renderPipelineCard();
 }
 
 function engineNote(): string {
   return pipeline.model
-    ? 'Nemotron Nano 9B runs on this machine; CP-SAT repairs and the rule checker validates each plan.'
+    ? `Our fine-tuned Nemotron Nano 9B runs ${pipeline.remote ? 'on a cloud GPU' : 'on this machine'}; CP-SAT repairs and the rule checker validates each plan.`
     : 'No local model found, so plans start from templates; CP-SAT repairs and the rule checker validates each plan.';
 }
 
@@ -100,7 +101,7 @@ async function generate(): Promise<void> {
   pipeline.busy = true;
   go.disabled = true;
   status.textContent = pipeline.model
-    ? 'Generating… the local model can take a minute.'
+    ? `Generating… ${pipeline.remote ? 'the first request wakes the GPU, so it' : 'the local model'} can take a minute.`
     : 'Generating…';
   const t0 = performance.now();
   try {

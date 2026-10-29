@@ -97,14 +97,13 @@ async def _ask_remote(brief: str, cfg: Dict[str, str]) -> str:
 def _ask_local(brief: str) -> Optional[Tuple[str, str]]:
     """The local GGUF Nemotron, when it is downloaded, with output held to a JSON object by a grammar."""
     try:
-        from aegisplan.gguf_engine import get_gguf_engine, is_gguf_available
+        from aegisplan.gguf_engine import get_gguf_engine, is_gguf_available, model_label
 
         if not is_gguf_available():
             return None
         engine = get_gguf_engine()
         if not engine:
             return None
-        from llama_cpp import LlamaGrammar  # noqa: F401  (generate_chat builds it)
 
         grammar = r'''root ::= "{" ws "\"it_mw\":" ws num "," ws "\"cooling\":" ws cool "," ws "\"cooling_redundancy\":" ws red "," ws "\"power_redundancy\":" ws red "," ws "\"price_kwh\":" ws num "," ws "\"years\":" ws num "," ws "\"notes\":" ws str ws "}"
 num ::= "null" | [0-9]+ ("." [0-9]+)?
@@ -113,7 +112,7 @@ red ::= "null" | "\"N\"" | "\"N+1\"" | "\"2N\""
 str ::= "\"" [^"\n]{0,200} "\""
 ws ::= [ ]?'''
         messages = [{"role": "system", "content": BRIEF_PROMPT + "/no_think"}, {"role": "user", "content": brief}]
-        return engine.generate_chat(messages, grammar=grammar, max_tokens=200), "Nemotron Nano 9B (local)"
+        return engine.generate_chat(messages, grammar=grammar, max_tokens=200), model_label()
     except Exception:
         return None
 
@@ -323,8 +322,8 @@ async def check_program(req: CheckRequest):
 
 @router.get("/api/dc/health")
 async def dc_health():
-    from aegisplan.gguf_engine import is_gguf_available
+    from aegisplan.gguf_engine import is_gguf_available, model_label
 
     cfg = chat.chat_config()
-    model = cfg["model"] if cfg else ("Nemotron Nano 9B (local)" if is_gguf_available() else None)
+    model = cfg["model"] if cfg else (model_label() if is_gguf_available() else None)
     return {"cpsat": True, "brief_model": model}

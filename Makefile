@@ -1,6 +1,6 @@
 PY := aegis/.venv/bin/python
 
-.PHONY: setup dev test test-aegis test-viz fixtures bench deploy-hf
+.PHONY: setup dev test test-aegis test-viz fixtures bench deploy-model deploy-modal
 
 setup:
 	cd aegis && uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt -e .
@@ -26,6 +26,13 @@ fixtures:
 bench:
 	cd aegis && .venv/bin/python scripts/bench_pipeline.py $(ARGS)
 
-# Deploy the committed HEAD to the Hugging Face Space (needs HF_TOKEN; keys from aegis/.env become Space secrets).
-deploy-hf:
-	$(PY) deploy/hf/deploy.py $(if $(SPACE),--space $(SPACE),)
+
+# The fine-tuned model on a Modal GPU (once: modal run deploy/modal/model.py::download, and the aegis-model secret).
+deploy-model:
+	aegis/.venv/bin/modal deploy deploy/modal/model.py
+
+# The app on Modal: builds the viewer, syncs keys from aegis/.env into the aegis-app secret, deploys.
+deploy-modal:
+	cd viz && npm run build
+	$(PY) deploy/modal/secrets.py
+	aegis/.venv/bin/modal deploy deploy/modal/app.py

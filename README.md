@@ -6,6 +6,8 @@
 
 **Brief in, building out.** Describe a building in a sentence. You get valid floor plans, a 3D model you can walk through, a simulation of how the building performs, and a file for Blender or NVIDIA Omniverse.
 
+**▶ Live demo: [rome101202--floorplan-intelligence.us-east.modal.run](https://rome101202--floorplan-intelligence.us-east.modal.run)**. Data Center Studio is at [`/datacenter`](https://rome101202--floorplan-intelligence.us-east.modal.run/datacenter). The first visit after a quiet spell takes a few seconds while the servers wake up, and the first plan generation takes up to a minute while the GPU loads the model.
+
 > The LLM proposes. The solver proves. The simulator tells you if it works.
 
 | | |
@@ -13,6 +15,7 @@
 | **Hackathon** | Nebius × NVIDIA Global AI Hackathon 2026 |
 | **Track** | Best Apps and Agents |
 | **Team** | Arunachalam · Sarvesh · Venu Arvind |
+| **Live demo** | [rome101202--floorplan-intelligence.us-east.modal.run](https://rome101202--floorplan-intelligence.us-east.modal.run) |
 | **Demo video** | _Coming soon_ <!-- Replace with the YouTube link: [Watch on YouTube](https://youtu.be/...) --> |
 | **License** | [MIT](LICENSE) |
 
@@ -29,6 +32,7 @@
 - [Measured results](#measured-results)
 - [Quick start](#quick-start)
 - [Architecture](#architecture)
+- [Deployment](#deployment)
 - [Testing](#testing)
 - [Limitations](#limitations)
 - [Roadmap](#roadmap)
@@ -53,7 +57,7 @@ The work is split by what each tool does best:
 | Exact geometry, or a proof that a request is impossible | **Google OR-Tools CP-SAT** | No overlaps, locked rooms kept, minimal moves. When a request is infeasible, it names the conflicting rooms. |
 | Say what passed and why | **Rule checker** with citations (ADA, FGI, IBC for clinics; ASHRAE, NEC, NFPA for data centers) | It reports what it checked, never a blanket "compliant". |
 | Show it, run it, price it | **Browser app**: WebGPU 3D, deterministic simulation, failure testing, cost model | Everyone sees the same geometry, and the numbers are reproducible. |
-| Talk to it | **Tool-calling assistant** (Nemotron, or a built-in fallback) with web search | It answers from the app's live numbers and acts through the same functions as the buttons. |
+| Talk to it | **Tool-calling assistant**: **NVIDIA Nemotron 3 Ultra on Nebius Token Factory** (or a built-in fallback), with web search | It answers from the app's live numbers and acts through the same functions as the buttons. |
 
 **Same model, same solver, same viewer: a new building type is a configuration, not a new product.** We show this with two very different buildings, an outpatient clinic and an AI data center.
 
@@ -122,7 +126,7 @@ The second domain, built to show the pipeline is general. Four steps: **Describe
 
 **Describe**
 - Type one sentence, e.g. *"20 MW AI factory, liquid cooled, N+1 cooling, 2N power, 9¢/kWh, 5 years"*. A deterministic **brief reader** extracts MW, GPU counts, cooling type, redundancy, electricity price and years.
-- **Nemotron** (`/api/dc/brief`) fills in what the sentence implies but doesn't state, such as "enough for 6,000 GB200s" or "Tier III". **Numbers you type always win**, and the UI tags anything the model added.
+- **Nemotron 3 Ultra on Nebius Token Factory** (`/api/dc/brief`) fills in what the sentence implies but doesn't state, such as "enough for 6,000 GB200s" or "Tier III". **Numbers you type always win**, and the UI tags anything the model added.
 
 **Design: three options, every part placed**
 
@@ -180,7 +184,7 @@ The second domain, built to show the pipeline is general. Four steps: **Describe
   - when something you broke takes rows down, it explains the cause;
   - after a simulation run, it reports the verdict and the bottleneck.
 - **Providers:**
-  - **Nemotron** through the server's `/api/chat` proxy, which streams OpenAI-format tool calls over SSE. **Keys never reach the browser.**
+  - **NVIDIA Nemotron 3 Ultra (550B) on Nebius Token Factory**, through the server's `/api/chat` proxy, which streams OpenAI-format tool calls over SSE. Its reasoning pass is switched off with `chat_template_kwargs`, so tool calls come back in under a second. **Keys never reach the browser.**
   - A **built-in** mode that needs no model and answers common questions instantly. The app works fully offline.
 - Answers link rooms and parts as `[Exam 2](#exam_room_2)`. Clicking the link flies the 3D there.
 
@@ -199,9 +203,13 @@ The second domain, built to show the pipeline is general. Four steps: **Describe
 - The model runs **locally on Apple Silicon Metal** (all layers on GPU, about 5.8 GB of memory), so no data leaves the machine.
 - **Program-first generation** is a design decision backed by our own test. Constrained Nemotron writes a reliable *room program* but unreliable geometry, so Nemotron decides *what* to build and CP-SAT decides *where*.
 
-**Nemotron's tool calling powers the assistant** through any OpenAI-compatible endpoint:
-- the NVIDIA API catalog / NIM (`NVIDIA_API_KEY`, default `nvidia/nvidia-nemotron-nano-9b-v2`);
-- **Nebius Token Factory** or a self-hosted vLLM / llama.cpp server (`AEGIS_CHAT_URL`, `AEGIS_CHAT_KEY`, `AEGIS_CHAT_MODEL`).
+**Nebius Token Factory runs NVIDIA Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`) for every live language task in the hosted app:**
+- the assistant in both apps: tool calling over the app's live state, streamed through `/api/chat` (`aegis/aegisplan/chat.py`);
+- the data center brief reader, which turns "enough for 6,000 GB200s, Tier III" into a design basis (`/api/dc/brief`).
+
+We measured on Token Factory: a tool call comes back in about 0.7 s. Turning off Ultra's reasoning pass (`chat_template_kwargs: {enable_thinking: false}`; it ignores `/no_think`) gave the same answers about 2× faster with a quarter of the tokens. Any other OpenAI-compatible endpoint (the NVIDIA API catalog, NIM, vLLM, llama.cpp) also works through `AEGIS_CHAT_URL`.
+
+**Our fine-tuned model is hosted too:** the GGUF runs on llama.cpp's CUDA server on a serverless GPU (Modal, L4 / A10G / T4, scales to zero). Requests keep the same GBNF grammar as locally, and three checked candidates come back in about 16 s warm, versus about 47 s on an M4 Pro laptop (`deploy/modal/model.py`).
 
 **NVIDIA Omniverse / OpenUSD:** Data center designs export as USD with PointInstancers and custom attributes. The rack classes are modelled on NVIDIA hardware: GB200 NVL72 (132 kW), HGX H200 and L40S.
 
@@ -219,8 +227,10 @@ Every number below was measured or read from the code. The raw benchmark is in [
 | Brief fidelity (every named room type and stated count present) | **20 / 20** |
 | Latency for 3 candidates, p50 / max | **0.04 s / 0.13 s** |
 | Impossible requests answered with a conflict core instead of a plan | **5 / 5** |
-| With Nemotron on (3 candidates, all layers on Metal) | **~47 s** per request |
+| With the fine-tuned Nemotron on (3 candidates), cloud GPU, warm | **~16 s** per request (all 3 `OPTIMAL`, 9/9 checks in our live test) |
+| Same, on an Apple M4 Pro laptop, all layers on Metal | **~47 s** per request |
 | API cost per plan when run locally | **$0** |
+| Nemotron 3 Ultra tool call on Token Factory | **~0.7 s** |
 
 **The simulator separates layouts.** These numbers are for a flu-season Monday, averaged over 5 simulated days:
 
@@ -254,9 +264,12 @@ make dev        # builds the viewer and serves viewer + API on http://127.0.0.1:
 
 | Feature | How |
 |---|---|
-| Local fine-tuned Nemotron for generation | `aegis/.venv/bin/python aegis/scripts/download_from_hf.py`. The GGUF lands in `aegis/checkpoints/` and is used automatically. |
-| Nemotron for the assistant and the data center brief reader | `NVIDIA_API_KEY=nvapi-... make dev` (NVIDIA API catalog), or `AEGIS_CHAT_URL=<OpenAI-compatible /v1 URL> AEGIS_CHAT_KEY=... AEGIS_CHAT_MODEL=<model id> make dev` (Nebius Token Factory, NIM, vLLM, llama.cpp) |
-| Web search in the assistant | Put `TAVILY_API_KEY=tvly-...` in `aegis/.env` (gitignored, read at server start) or in the environment |
+| Nemotron 3 Ultra for the assistant and the data center brief reader | `NEBIUS_API_KEY=...` (Nebius Token Factory). Alternatives: `NVIDIA_API_KEY=nvapi-...` (NVIDIA API catalog), or `AEGIS_CHAT_URL` + `AEGIS_CHAT_KEY` + `AEGIS_CHAT_MODEL` for any OpenAI-compatible endpoint. |
+| Our fine-tuned Nemotron for clinic generation, locally | `aegis/.venv/bin/python aegis/scripts/download_from_hf.py`. The GGUF lands in `aegis/checkpoints/` and is used automatically (Metal on Apple Silicon). |
+| The same model on a cloud GPU | `AEGIS_GGUF_URL` + `AEGIS_GGUF_KEY` pointing at a llama.cpp server (see [Deployment](#deployment)) |
+| Web search in the assistant | `TAVILY_API_KEY=tvly-...` |
+
+Put keys in `aegis/.env` (gitignored, read at server start) or in the environment.
 
 API keys stay on the server. `/api/chat` and `/api/search` proxy the requests, and the browser runs the tools. See `aegis/aegisplan/chat.py` and `aegis/aegisplan/search.py`.
 
@@ -339,11 +352,28 @@ Without the server, both apps still run as static sites, on sample plans, in-bro
 
 The full technology list is in [presentation/10-tech-stack.md](presentation/10-tech-stack.md).
 
+## Deployment
+
+The live demo runs on [Modal](https://modal.com) as two serverless apps that scale to zero, so an idle demo costs nothing:
+
+| App | What | Where |
+|---|---|---|
+| `floorplan-intelligence` | FastAPI + both browser apps, on a small CPU container | `deploy/modal/app.py` |
+| `aegisplan-model` | The fine-tuned GGUF on llama.cpp's CUDA server, protected by an API key | `deploy/modal/model.py` |
+
+```bash
+pip install modal && modal setup                        # once
+modal run deploy/modal/model.py::download               # once: the GGUF from Hugging Face into a Modal volume
+modal secret create aegis-model LLAMA_API_KEY=<random>  # once; put the same value in aegis/.env as AEGIS_GGUF_KEY
+make deploy-model                                       # the GPU endpoint
+make deploy-modal                                       # builds the viewer, syncs keys from aegis/.env, deploys the app
+```
+
 ## Testing
 
 ```bash
 make test                                   # everything below except Playwright
-cd aegis && .venv/bin/python -m pytest -q   # 64 tests
+cd aegis && .venv/bin/python -m pytest -q   # 67 tests
 cd viz && npm run check                     # typecheck + lint + 154 Vitest unit and golden tests
 cd viz && npm run test:e2e                  # Playwright end-to-end (npx playwright install chromium first)
 ```
@@ -351,7 +381,7 @@ cd viz && npm run test:e2e                  # Playwright end-to-end (npx playwri
 **Python tests:**
 - The adapter is checked on all 500 dataset plans.
 - CP-SAT repair, plain-language edits and the data center endpoints.
-- The chat and search proxies, against mocked transports.
+- The chat and search proxies and the remote model engine, against mocked transports.
 - Tests never load the model.
 
 **Viewer tests:**
@@ -364,7 +394,7 @@ cd viz && npm run test:e2e                  # Playwright end-to-end (npx playwri
 
 - **Not a licensed design or code sign-off.** The checker implements 9 clinic rules and 10 data center checks. It reports "passes N of M implemented checks", never "compliant".
 - **The model is not trusted with coordinates.** This is by design, and backed by our own test (see [How it works](#how-it-works)).
-- **Generation with the model is slow on a laptop**: about 47 s for 3 candidates on an M4 Pro. A hosted Nemotron is the path to faster generation.
+- **The first generation after the GPU has been idle waits for the model to load** (up to about a minute). Warm requests take about 16 s on the cloud GPU, and about 47 s on an M4 Pro laptop.
 - Layouts are **single-storey and orthogonal**.
 - **Thermal is an estimate, not CFD.** Pass/fail comes from capacity arithmetic.
 - **Costs are planning estimates** from stated, editable assumptions, not quotes.
@@ -372,7 +402,7 @@ cd viz && npm run test:e2e                  # Playwright end-to-end (npx playwri
 ## Roadmap
 
 1. Domain packs as configuration on the Python side (`domains/clinic`, `domains/datacenter`), opening the way to schools, offices, labs and hospitals.
-2. Faster generation with hosted Nemotron, a shorter program format and caching by brief.
+2. Faster generation: a shorter program format, caching by brief, and serving the fine-tune on Token Factory.
 3. Multi-storey and non-rectangular sites, windows and exterior walls in the solver, and DXF export.
 4. Richer Omniverse output (materials, per-rack variants) with live sync of failure states into a digital twin.
 5. Staffing optimisation: search for the cheapest staffing that still "Handles it".

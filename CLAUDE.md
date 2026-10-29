@@ -18,7 +18,11 @@ make dev              # builds viz, then serves viewer + API on http://127.0.0.1
 make test             # aegis pytest + viz `npm run check`
 make fixtures         # regenerate viz/tests/fixtures/aegis from AegisPlan
 make bench ARGS=--no-model   # measured benchmark -> docs/BENCHMARK.md (no ARGS = ~30 min with the model)
+make deploy-model     # fine-tuned GGUF on a Modal GPU (llama.cpp server, deploy/modal/model.py)
+make deploy-modal     # the app on Modal; syncs keys from aegis/.env into the `aegis-app` secret
 ```
+
+Live demo: https://rome101202--floorplan-intelligence.us-east.modal.run (Modal workspace `rome101202`). Both Modal apps scale to zero. Redeploy the app after any change to `aegis/aegisplan` or `viz/`.
 
 Single tests:
 
@@ -30,7 +34,7 @@ cd viz && npx playwright test tests/e2e/review.spec.ts   # needs `npx playwright
 
 Viz scripts: `npm run dev` (Vite on :5173, proxies `/api` to :8000; `FI_OFFLINE=1` turns the proxy off), `npm run build`, `npm run check` (typecheck + lint + Vitest), `npm run test:e2e`, `npm run test:visual`, `npm run golden:check`.
 
-Optional chat model for the assistants: set `NVIDIA_API_KEY`, `AEGIS_CHAT_URL` (+`AEGIS_CHAT_KEY`, `AEGIS_CHAT_MODEL`) or `OPENROUTER_API_KEY` when you run `make dev`. See the docstring in `aegis/aegisplan/chat.py`. Web search for the assistants needs `TAVILY_API_KEY`. `server.py` loads it from the gitignored `aegis/.env`, which holds the key on this machine. Never commit it.
+The assistants and the DC brief reader use Nemotron 3 Ultra on Nebius Token Factory when `NEBIUS_API_KEY` is set (`chat.py`; `chat_template_kwargs.enable_thinking=false` turns off its reasoning). Clinic generation uses the fine-tuned GGUF: local in `aegis/checkpoints/`, or remote through `AEGIS_GGUF_URL` + `AEGIS_GGUF_KEY` (`RemoteGGUFEngine` in `gguf_engine.py`). Other chat models: `NVIDIA_API_KEY`, `AEGIS_CHAT_URL` (+`AEGIS_CHAT_KEY`, `AEGIS_CHAT_MODEL`) or `OPENROUTER_API_KEY` when you run `make dev`. See the docstring in `aegis/aegisplan/chat.py`. Web search for the assistants needs `TAVILY_API_KEY`. `server.py` loads it from the gitignored `aegis/.env`, which holds the key on this machine. Never commit it.
 
 ## Architecture
 

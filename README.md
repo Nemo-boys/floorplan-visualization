@@ -1,6 +1,16 @@
 # Floorplan Intelligence
 
-Brief in, building out. A local Nemotron model drafts floor plans, OR-Tools CP-SAT makes them valid, a rule checker cites what passed, and a WebGPU viewer reviews, simulates and exports them in 3D. Built for the Nebius × NVIDIA Global AI Hackathon 2026.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+Brief in, building out. A local Nemotron model drafts floor plans, OR-Tools CP-SAT makes them valid, a rule checker cites what passed, and a WebGPU viewer reviews, simulates and exports them in 3D.
+
+| | |
+|---|---|
+| **Hackathon** | Nebius × NVIDIA Global AI Hackathon 2026 |
+| **Track** | Best Apps and Agents |
+| **Team** | Arunachalam · Sarvesh · Venu Arvind |
+| **Demo video** | _Coming soon_ <!-- Replace with the YouTube link: [Watch on YouTube](https://youtu.be/...) --> |
+| **License** | [MIT](LICENSE) |
 
 | Folder | What it is |
 |---|---|
@@ -58,3 +68,7 @@ cd aegis && .venv/bin/python -m aegisplan.export_viz plan.json -o viz-plan.json
 Then use Upload in the viewer.
 
 Both projects came in with `git subtree`, so their history is in `git log -- aegis/` and `git log -- viz/`.
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright © 2026 Arunachalam, Sarvesh and Venu Arvind.

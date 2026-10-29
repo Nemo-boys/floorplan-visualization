@@ -1,6 +1,6 @@
 PY := aegis/.venv/bin/python
 
-.PHONY: setup dev test test-aegis test-viz fixtures bench
+.PHONY: setup dev test test-aegis test-viz fixtures bench deploy-hf
 
 setup:
 	cd aegis && uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -r requirements.txt -e .
@@ -25,3 +25,7 @@ fixtures:
 # Measured benchmark; writes docs/BENCHMARK.md. Add ARGS=--no-model to skip the model (seconds instead of ~30 min).
 bench:
 	cd aegis && .venv/bin/python scripts/bench_pipeline.py $(ARGS)
+
+# Deploy the committed HEAD to the Hugging Face Space (needs HF_TOKEN; keys from aegis/.env become Space secrets).
+deploy-hf:
+	$(PY) deploy/hf/deploy.py $(if $(SPACE),--space $(SPACE),)
